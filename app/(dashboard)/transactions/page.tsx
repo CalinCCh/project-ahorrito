@@ -209,7 +209,7 @@ const TransactionsPage = () => {
         className="mb-6"
       />
       <div className="-mt-6">
-        <div className="h-[700px] min-h-[700px] flex flex-col">
+        <div className="h-[770px] min-h-[770px] flex flex-col">
           <DataTable
             filterKey="payee"
             columns={columns}

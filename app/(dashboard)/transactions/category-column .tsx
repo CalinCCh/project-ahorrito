@@ -1,7 +1,7 @@
 import { useOpenCategory } from "@/features/categories/hooks/use-open-category";
 import { useOpenTransaction } from "@/features/transactions/hooks/use-open-transaction";
 import { cn } from "@/lib/utils";
-import { TriangleAlert } from "lucide-react";
+import { TriangleAlert, Hash } from "lucide-react";
 
 type Props = {
   id: string;
@@ -27,13 +27,24 @@ export const CategoryColumn = ({ id, category, categoryId, emoji }: Props) => {
     <div
       onClick={onClick}
       className={cn(
-        "flex items-center cursor-pointer hover:underline",
-        !category && "text-rose-500"
+        "flex items-center w-full cursor-pointer px-2 py-1 rounded-lg transition-all duration-200 group hover:bg-slate-50/90 hover:text-slate-800",
+        !category && "text-slate-500"
       )}
     >
-      {!category && <TriangleAlert className="mr-2 size-4 shrink-0" />}
-      {emoji && <span className="mr-1">{emoji}</span>}
-      {category || "Uncategorized"}
+      <div className="w-6 flex justify-center mr-1.5">
+        {!category ? (
+          <TriangleAlert className="size-3.5 shrink-0 text-slate-400 group-hover:text-slate-600 transition-transform duration-200 group-hover:scale-110" />
+        ) : emoji ? (
+          <span className="text-lg transition-transform duration-200 group-hover:scale-110">
+            {emoji}
+          </span>
+        ) : (
+          <Hash className="size-3.5 shrink-0 text-slate-400 group-hover:text-slate-600 transition-transform duration-200 group-hover:scale-110" />
+        )}
+      </div>
+      <span className="truncate transition-all duration-200 group-hover:font-medium">
+        {category || "Uncategorized"}
+      </span>
     </div>
   );
 };

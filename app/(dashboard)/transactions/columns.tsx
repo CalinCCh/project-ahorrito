@@ -3,7 +3,17 @@
 import { InferResponseType } from "hono";
 import { Button } from "@/components/ui/button";
 import { ColumnDef } from "@tanstack/react-table";
-import { ArrowUpDown, Calendar, CreditCard, DollarSign, Hash, ShoppingBag, User } from "lucide-react";
+import {
+  ArrowUpDown,
+  Calendar,
+  CreditCard,
+  DollarSign,
+  Hash,
+  ShoppingBag,
+  User,
+  ChevronUp,
+  ChevronDown,
+} from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { client } from "@/lib/hono";
 import { Actions } from "./actions";
@@ -12,6 +22,7 @@ import { formatCurrency, convertAmountFromMiliunits } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { AccountColumn } from "./account-column";
 import { CategoryColumn } from "./category-column ";
+import { useState } from "react";
 
 export type ResponseType = InferResponseType<
   typeof client.api.transactions.$get,
@@ -42,40 +53,80 @@ export const columns: ColumnDef<ResponseType>[] = [
     ),
     enableSorting: false,
     enableHiding: false,
+    size: 40,
   },
   {
     accessorKey: "date",
     header: ({ column }) => {
+      const isSorted = column.getIsSorted();
       return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="hover:bg-slate-100/70 font-normal text-slate-700"
-        >
-          <Calendar className="mr-2 h-4 w-4 text-slate-500" />
-          Date
-          <ArrowUpDown className="ml-2 h-3.5 w-3.5 text-slate-400" />
-        </Button>
+        <div className="w-full px-1 group">
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            className="w-full h-9 px-2.5 py-1.5 justify-start font-normal text-slate-700 hover:bg-slate-50/90 hover:text-black hover:font-normal rounded-lg transition-all duration-200 cursor-pointer"
+          >
+            <Calendar className="mr-2.5 h-4 w-4 text-slate-500" />
+            <span>Date</span>
+
+            {isSorted ? (
+              <span className="ml-auto">
+                {isSorted === "asc" ? (
+                  <ChevronUp className="h-4 w-4 text-slate-500" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 text-slate-500" />
+                )}
+              </span>
+            ) : (
+              <span className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                <ArrowUpDown className="h-4 w-4 text-slate-400" />
+              </span>
+            )}
+          </Button>
+        </div>
       );
     },
     cell: ({ row }) => {
       const date = row.getValue("date") as Date;
-      return <span className="font-normal text-slate-800">{format(date, "dd MMM, yyyy")}</span>;
+      return (
+        <div className="pl-2.5">
+          <span className="font-normal text-slate-800">
+            {format(date, "dd MMM, yyyy")}
+          </span>
+        </div>
+      );
     },
+    size: 160,
   },
   {
     accessorKey: "category",
     header: ({ column }) => {
+      const isSorted = column.getIsSorted();
       return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="hover:bg-slate-100/70 font-normal text-slate-700"
-        >
-          <Hash className="mr-2 h-4 w-4 text-slate-500" />
-          Category
-          <ArrowUpDown className="ml-2 h-3.5 w-3.5 text-slate-400" />
-        </Button>
+        <div className="w-full px-1 group">
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            className="w-full h-9 px-2.5 py-1.5 justify-start font-normal text-slate-700 hover:bg-slate-50/90 hover:text-black hover:font-normal rounded-lg transition-all duration-200 cursor-pointer"
+          >
+            <Hash className="mr-2.5 h-4 w-4 text-slate-500" />
+            <span>Category</span>
+
+            {isSorted ? (
+              <span className="ml-auto">
+                {isSorted === "asc" ? (
+                  <ChevronUp className="h-4 w-4 text-slate-500" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 text-slate-500" />
+                )}
+              </span>
+            ) : (
+              <span className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                <ArrowUpDown className="h-4 w-4 text-slate-400" />
+              </span>
+            )}
+          </Button>
+        </div>
       );
     },
     cell: ({ row }) => {
@@ -90,71 +141,136 @@ export const columns: ColumnDef<ResponseType>[] = [
         />
       );
     },
+    size: 180,
   },
   {
     accessorKey: "payee",
     header: ({ column }) => {
+      const isSorted = column.getIsSorted();
       return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="hover:bg-slate-100/70 font-normal text-slate-700"
-        >
-          <ShoppingBag className="mr-2 h-4 w-4 text-slate-500" />
-          Payee
-          <ArrowUpDown className="ml-2 h-3.5 w-3.5 text-slate-400" />
-        </Button>
+        <div className="w-full px-1 group">
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            className="w-full h-9 px-2.5 py-1.5 justify-start font-normal text-slate-700 hover:bg-slate-50/90 hover:text-black hover:font-normal rounded-lg transition-all duration-200 cursor-pointer"
+          >
+            <ShoppingBag className="mr-2.5 h-4 w-4 text-slate-500" />
+            <span>Payee</span>
+
+            {isSorted ? (
+              <span className="ml-auto">
+                {isSorted === "asc" ? (
+                  <ChevronUp className="h-4 w-4 text-slate-500" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 text-slate-500" />
+                )}
+              </span>
+            ) : (
+              <span className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                <ArrowUpDown className="h-4 w-4 text-slate-400" />
+              </span>
+            )}
+          </Button>
+        </div>
       );
     },
     cell: ({ row }) => {
-      return <span className="font-normal text-slate-800">{row.getValue("payee") as string}</span>;
+      return (
+        <span className="font-normal text-slate-800 pl-2.5">
+          {row.getValue("payee") as string}
+        </span>
+      );
     },
+    size: 250,
   },
   {
     accessorKey: "amount",
     header: ({ column }) => {
+      const isSorted = column.getIsSorted();
       return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="hover:bg-slate-100/70 font-normal text-slate-700"
-        >
-          <DollarSign className="mr-2 h-4 w-4 text-slate-500" />
-          Amount
-          <ArrowUpDown className="ml-2 h-3.5 w-3.5 text-slate-400" />
-        </Button>
+        <div className="w-full px-1 group">
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            className="w-full h-9 px-2.5 py-1.5 justify-start font-normal text-slate-700 hover:bg-slate-50/90 hover:text-black hover:font-normal rounded-lg transition-all duration-200 cursor-pointer"
+          >
+            <DollarSign className="mr-2.5 h-4 w-4 text-slate-500" />
+            <span>Amount</span>
+
+            {isSorted ? (
+              <span className="ml-auto">
+                {isSorted === "asc" ? (
+                  <ChevronUp className="h-4 w-4 text-slate-500" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 text-slate-500" />
+                )}
+              </span>
+            ) : (
+              <span className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                <ArrowUpDown className="h-4 w-4 text-slate-400" />
+              </span>
+            )}
+          </Button>
+        </div>
       );
     },
     cell: ({ row }) => {
       const rawAmount = parseFloat(row.getValue("amount"));
       const amount = convertAmountFromMiliunits(rawAmount);
+      const isNegative = rawAmount < 0;
+
       return (
-        <Badge
-          variant={rawAmount < 0 ? "destructive" : "primary"}
-          className={`rounded-full text-xs font-normal px-3.5 py-1.5 shadow-sm ${
-            rawAmount < 0 
-              ? "bg-red-50 text-red-600 hover:bg-red-100" 
-              : "bg-emerald-50 text-emerald-600 hover:bg-emerald-100"
-          }`}
-        >
-          {formatCurrency(amount)}
-        </Badge>
+        <div className="flex items-center">
+          <div
+            className={`
+              ml-1 px-3 py-1.5 rounded-lg text-center
+              ${
+                isNegative
+                  ? "bg-red-50/60 text-red-700 border border-red-100/80"
+                  : "bg-emerald-50/60 text-emerald-700 border border-emerald-100/80"
+              }
+            `}
+            style={{ width: "105px" }}
+          >
+            <span className="font-medium tabular-nums tracking-tight">
+              {isNegative ? "−" : "+"}
+              {formatCurrency(Math.abs(amount)).replace("-", "")}
+            </span>
+          </div>
+        </div>
       );
     },
+    size: 140,
   },
   {
     accessorKey: "account",
     header: ({ column }) => {
+      const isSorted = column.getIsSorted();
       return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-          className="hover:bg-slate-100/70 font-normal text-slate-700"
-        >
-          <CreditCard className="mr-2 h-4 w-4 text-slate-500" />
-          Account
-          <ArrowUpDown className="ml-2 h-3.5 w-3.5 text-slate-400" />
-        </Button>
+        <div className="w-full px-1 group">
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            className="w-full h-9 px-2.5 py-1.5 justify-start font-normal text-slate-700 hover:bg-slate-50/90 hover:text-black hover:font-normal rounded-lg transition-all duration-200 cursor-pointer"
+          >
+            <CreditCard className="mr-2.5 h-4 w-4 text-slate-500" />
+            <span>Account</span>
+
+            {isSorted ? (
+              <span className="ml-auto">
+                {isSorted === "asc" ? (
+                  <ChevronUp className="h-4 w-4 text-slate-500" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 text-slate-500" />
+                )}
+              </span>
+            ) : (
+              <span className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                <ArrowUpDown className="h-4 w-4 text-slate-400" />
+              </span>
+            )}
+          </Button>
+        </div>
       );
     },
     cell: ({ row }) => {
@@ -165,9 +281,11 @@ export const columns: ColumnDef<ResponseType>[] = [
         />
       );
     },
+    size: 160,
   },
   {
     id: "actions",
     cell: ({ row }) => <Actions id={row.original.id} />,
+    size: 50,
   },
 ];

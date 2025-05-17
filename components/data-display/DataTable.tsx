@@ -89,6 +89,7 @@ export function DataTable<TData, TValue>({
     onColumnFiltersChange: setColumnFilters,
     getFilteredRowModel: getFilteredRowModel(),
     onRowSelectionChange: setRowSelection,
+    columnResizeMode: "onChange",
     state: {
       sorting,
       columnFilters,
@@ -96,19 +97,19 @@ export function DataTable<TData, TValue>({
     },
     initialState: {
       pagination: {
-        pageSize: 9,
+        pageSize: 11,
       },
     },
   });
 
-  const ROW_HEIGHT = 58; // Ligeramente reducido para mejor ajuste
+  const ROW_HEIGHT = 52; // Altura reducida para permitir más filas
   const HEADER_HEIGHT = 48; // Altura del header
   const PAGINATION_HEIGHT = 65; // Altura aproximada de la sección de paginación
   const FILTER_AREA_HEIGHT = 70; // Altura aproximada del área de filtros
   const visibleRows = table.getRowModel().rows;
 
   // Calculamos cuántas filas caben exactamente en el espacio disponible
-  const totalRows = 9; // Mantenemos 9 filas por página
+  const totalRows = 11; // Aumentamos a 11 filas en total
   const emptyRowsCount = Math.max(0, totalRows - visibleRows.length);
 
   return (
@@ -153,8 +154,8 @@ export function DataTable<TData, TValue>({
           </div>
         </div>
       </div>
-      <div className="rounded-xl border border-slate-200/80 bg-white/90 flex-grow flex flex-col shadow-sm backdrop-blur-sm">
-        <Table className="h-full">
+      <div className="rounded-xl overflow-hidden border border-slate-200/80 bg-white/90 flex-grow flex flex-col shadow-sm backdrop-blur-sm">
+        <Table className="h-full table-fixed w-full">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow
@@ -166,6 +167,7 @@ export function DataTable<TData, TValue>({
                     <TableHead
                       key={header.id}
                       className="text-slate-700 font-medium px-4 h-11"
+                      style={{ width: header.getSize() }}
                     >
                       {header.isPlaceholder
                         ? null
@@ -186,12 +188,13 @@ export function DataTable<TData, TValue>({
                   <TableRow
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
-                    className="transition-colors duration-200 hover:bg-slate-50/70 data-[state=selected]:bg-blue-50/50 border-b border-slate-100/90"
+                    className="transition-colors duration-200 hover:bg-slate-50/90 data-[state=selected]:bg-slate-100/80 border-b border-slate-100/90"
                   >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell
                         key={cell.id}
-                        className="px-4 py-3 text-sm text-slate-700"
+                        className="px-4 py-2 text-sm text-slate-700"
+                        style={{ width: cell.column.getSize() }}
                       >
                         {flexRender(
                           cell.column.columnDef.cell,
@@ -207,10 +210,11 @@ export function DataTable<TData, TValue>({
                     key={`empty-${idx}`}
                     className="pointer-events-none border-b border-slate-100/60"
                   >
-                    {columns.map((_, colIdx) => (
+                    {table.getAllColumns().map((column) => (
                       <TableCell
-                        key={colIdx}
-                        className="h-[58px] bg-transparent"
+                        key={column.id}
+                        className="h-[52px] bg-transparent"
+                        style={{ width: column.getSize() }}
                       />
                     ))}
                   </TableRow>
@@ -239,7 +243,7 @@ export function DataTable<TData, TValue>({
           size="sm"
           onClick={() => table.previousPage()}
           disabled={!table.getCanPreviousPage()}
-          className="rounded-lg border-slate-200 hover:bg-slate-50 hover:border-slate-300 h-9 px-3.5 transition-all duration-200"
+          className="rounded-lg border-slate-200 hover:bg-slate-50/90 hover:border-slate-300 h-9 px-3.5 transition-all duration-200"
         >
           <ChevronLeft className="size-4 mr-1" /> Previous
         </Button>
@@ -248,7 +252,7 @@ export function DataTable<TData, TValue>({
           size="sm"
           onClick={() => table.nextPage()}
           disabled={!table.getCanNextPage()}
-          className="rounded-lg border-slate-200 hover:bg-slate-50 hover:border-slate-300 h-9 px-3.5 transition-all duration-200"
+          className="rounded-lg border-slate-200 hover:bg-slate-50/90 hover:border-slate-300 h-9 px-3.5 transition-all duration-200"
         >
           Next <ChevronRight className="size-4 ml-1" />
         </Button>
