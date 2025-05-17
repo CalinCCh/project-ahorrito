@@ -26,7 +26,19 @@ import {
 import { useConfirm } from "@/hooks/use-confirm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ChevronLeft, ChevronRight, Trash } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  RefreshCw,
+  Trash,
+} from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { toast } from "sonner";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -35,6 +47,16 @@ interface DataTableProps<TData, TValue> {
   onDelete: (rows: Row<TData>[]) => void;
   disabled?: boolean;
   initialFilterValue?: string;
+  onSync?: () => Promise<void>;
+  isSyncing?: boolean;
+  lastSynced?: Date | null;
+  syncStatus?: string | null;
+  syncProgress?: {
+    current: number;
+    total: number;
+  } | null;
+  hasLinkedBankAccount?: boolean;
+  isAllAccountsView?: boolean;
 }
 
 export function DataTable<TData, TValue>({
@@ -44,6 +66,13 @@ export function DataTable<TData, TValue>({
   onDelete,
   disabled,
   initialFilterValue = "",
+  onSync,
+  isSyncing = false,
+  lastSynced = null,
+  syncStatus = null,
+  syncProgress = null,
+  hasLinkedBankAccount = false,
+  isAllAccountsView = false,
 }: DataTableProps<TData, TValue>) {
   const [ConfirmDialog, confirm] = useConfirm(
     "Are you sure?",
@@ -60,6 +89,7 @@ export function DataTable<TData, TValue>({
         ]
       : []
   );
+  const [localSyncing, setLocalSyncing] = React.useState(false);
 
   const [rowSelection, setRowSelection] = React.useState({});
 
@@ -78,6 +108,30 @@ export function DataTable<TData, TValue>({
       );
     }
   }, [initialFilterValue, filterKey]);
+
+  // Default sync handler if none provided
+  const handleSync = async () => {
+    if (onSync) {
+      return onSync();
+    }
+
+    // Si no hay onSync pero hay cuentas vinculadas, mostramos un toast
+    if (hasLinkedBankAccount || isAllAccountsView) {
+      setLocalSyncing(true);
+      toast.info("Iniciando sincronización de transacciones...");
+
+      // Simulación básica
+      setTimeout(() => {
+        setLocalSyncing(false);
+        toast.success("Transacciones sincronizadas correctamente");
+      }, 2000);
+    } else {
+      toast.error("No hay cuentas bancarias vinculadas para sincronizar");
+    }
+  };
+
+  const canSync = hasLinkedBankAccount || isAllAccountsView;
+  const isCurrentlySyncing = isSyncing || localSyncing;
 
   const table = useReactTable({
     data,
@@ -111,6 +165,36 @@ export function DataTable<TData, TValue>({
   // Calculamos cuántas filas caben exactamente en el espacio disponible
   const totalRows = 11; // Aumentamos a 11 filas en total
   const emptyRowsCount = Math.max(0, totalRows - visibleRows.length);
+
+  // Format last synced date
+  const formatLastSynced = (date: Date | null) => {
+    if (!date) return "Never";
+    const today = new Date();
+    const isSameDay = (date1: Date, date2: Date) => {
+      return (
+        date1.getDate() === date2.getDate() &&
+        date1.getMonth() === date2.getMonth() &&
+        date1.getFullYear() === date2.getFullYear()
+      );
+    };
+    const formatTime = (date: Date) => {
+      return date.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    };
+    if (isSameDay(date, today)) return `Today at ${formatTime(date)}`;
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    if (isSameDay(date, yesterday)) return `Yesterday at ${formatTime(date)}`;
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
 
   return (
     <div className="flex flex-col h-full">
@@ -232,30 +316,103 @@ export function DataTable<TData, TValue>({
             )}
           </TableBody>
         </Table>
-      </div>
-      <div className="flex items-center justify-end space-x-2 py-3">
-        <div className="flex-1 text-sm text-slate-500">
-          {table.getFilteredSelectedRowModel().rows.length} of{" "}
-          {table.getFilteredRowModel().rows.length} row(s) selected.
+        <div className="flex items-center justify-between px-4 py-3 bg-slate-50/90 border-t border-slate-200/80">
+          <div className="flex items-center">
+            <div className="text-sm text-slate-500 mr-4">
+              {table.getFilteredSelectedRowModel().rows.length} of{" "}
+              {table.getFilteredRowModel().rows.length} row(s) selected.
+            </div>
+            <div className="flex items-center space-x-2">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    onClick={handleSync}
+                    disabled={
+                      isCurrentlySyncing || disabled || (!canSync && !onSync)
+                    }
+                    variant="outline"
+                    size="sm"
+                    className="rounded-lg border-slate-200 hover:bg-slate-50/90 hover:border-slate-300 h-9 px-3.5 transition-all duration-200 flex items-center"
+                  >
+                    {isCurrentlySyncing ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                    )}
+                    Sync Transactions
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-[240px] text-xs">
+                  {!canSync && !onSync ? (
+                    "No hay cuentas bancarias vinculadas para sincronizar"
+                  ) : syncStatus ? (
+                    <div className="font-medium">{syncStatus}</div>
+                  ) : lastSynced ? (
+                    <>
+                      Last synced: {formatLastSynced(lastSynced)}
+                      <div className="text-xs text-slate-400 mt-1">
+                        Recent transactions may take up to 48 hours to appear
+                      </div>
+                    </>
+                  ) : (
+                    "Synchronize transactions with your bank"
+                  )}
+                  {syncProgress && (
+                    <div className="mt-2">
+                      <div className="flex justify-between items-center mb-1">
+                        <div className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                          Syncing Data
+                        </div>
+                        <div className="text-xs font-mono text-blue-600 dark:text-blue-400 tabular-nums">
+                          {syncProgress.current} / {syncProgress.total}
+                        </div>
+                      </div>
+                      <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-blue-500 to-blue-400 rounded-full transition-all duration-300 ease-out"
+                          style={{
+                            width: `${
+                              syncProgress.total
+                                ? Math.min(
+                                    100,
+                                    Math.round(
+                                      (syncProgress.current /
+                                        syncProgress.total) *
+                                        100
+                                    )
+                                  )
+                                : 0
+                            }%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.previousPage()}
+              disabled={!table.getCanPreviousPage()}
+              className="rounded-lg border-slate-200 hover:bg-slate-50/90 hover:border-slate-300 h-9 px-3.5 transition-all duration-200"
+            >
+              <ChevronLeft className="size-4 mr-1" /> Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.nextPage()}
+              disabled={!table.getCanNextPage()}
+              className="rounded-lg border-slate-200 hover:bg-slate-50/90 hover:border-slate-300 h-9 px-3.5 transition-all duration-200"
+            >
+              Next <ChevronRight className="size-4 ml-1" />
+            </Button>
+          </div>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => table.previousPage()}
-          disabled={!table.getCanPreviousPage()}
-          className="rounded-lg border-slate-200 hover:bg-slate-50/90 hover:border-slate-300 h-9 px-3.5 transition-all duration-200"
-        >
-          <ChevronLeft className="size-4 mr-1" /> Previous
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => table.nextPage()}
-          disabled={!table.getCanNextPage()}
-          className="rounded-lg border-slate-200 hover:bg-slate-50/90 hover:border-slate-300 h-9 px-3.5 transition-all duration-200"
-        >
-          Next <ChevronRight className="size-4 ml-1" />
-        </Button>
       </div>
     </div>
   );

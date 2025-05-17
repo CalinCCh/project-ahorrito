@@ -1,35 +1,32 @@
 "use client";
 
+import { useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
+
+import { useGetTransactions } from "@/features/transactions/api/use-get-transactions";
+import { useBulkDeleteTransactions } from "@/features/transactions/api/use-bulk-delete-transactions";
+import { useBulkCreateTransactions } from "@/features/transactions/api/use-bulk-create-transactions";
+import { useGetTotalTransactions } from "@/features/transactions/api/use-get-total-transactions";
+import { useGetAccounts } from "@/features/accounts/api/use-get-accounts";
+import { useAccounts } from "@/features/accounts/hooks/use-accounts";
+import { useSelectAccount } from "@/features/accounts/hooks/use-select-account";
+import { useNewTransaction } from "@/features/transactions/hooks/use-new-transaction";
+
+import { PageHeader } from "@/components/data-display/PageHeader";
+import { DataTable } from "@/components/data-display/DataTable";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, Plus } from "lucide-react";
-import { columns } from "./columns";
-import { DataTable } from "@/components/data-display/DataTable";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useNewTransaction } from "@/features/transactions/hooks/use-new-transaction";
-import { useGetTransactions } from "@/features/transactions/api/use-get-transactions";
-import { useBulkDeleteTransactions } from "@/features/transactions/api/use-bulk-delete-transactions";
-import { useState } from "react";
 import { UploadButton } from "./upload-button";
 import { ImportCard } from "./import-card";
-import {
-  transactions as transactionSchema,
-  type insertTransactionSchema,
-} from "@/db/schema";
-import { useSelectAccount } from "@/features/accounts/hooks/use-select-account";
-import { toast } from "sonner";
-import { useBulkCreateTransactions } from "@/features/transactions/api/use-bulk-create-transactions";
-import { PageHeader } from "@/components/data-display/PageHeader";
-import { Input } from "@/components/ui/input";
-import { z } from "zod";
 import { AccountFilter } from "@/components/filters/AccountFilter";
 import { DateFilter } from "@/components/filters/DateFilter";
-import { useGetTotalTransactions } from "@/features/transactions/api/use-get-total-transactions";
 
-enum VARIANTS {
-  LIST = "LIST",
-  IMPORT = "IMPORT",
-}
+import { columns } from "./columns";
 
 const INITIAL_IMPORT_RESULTS = {
   data: [],
@@ -37,107 +34,76 @@ const INITIAL_IMPORT_RESULTS = {
   meta: {},
 };
 
-// Define the shape of the objects that the API endpoint expects
-interface ExpectedApiInput {
-  date: Date; // Changed to Date as the mutation expects this type after coercion
-  payee: string;
-  amount: number;
-  notes?: string; // Optional, and if present, string (undefined if not, not null)
-  accountId: string;
-  userCategoryId?: string; // Optional, string | undefined
-  predefinedCategoryId?: string; // Optional, string | undefined
+enum VARIANTS {
+  LIST = "LIST",
+  IMPORT = "IMPORT",
 }
 
-const TransactionsPage = () => {
-  const [AccountDialog, confirm] = useSelectAccount();
+function getTransactionsDescription(count: number) {
+  return `You have a total of ${count} transaction${
+    count !== 1 ? "s" : ""
+  } recorded.`;
+}
+
+export default function TransactionsPage() {
   const [variant, setVariant] = useState<VARIANTS>(VARIANTS.LIST);
   const [importResults, setImportResults] = useState(INITIAL_IMPORT_RESULTS);
   const [filterValue, setFilterValue] = useState("");
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [AccountDialog, confirm] = useSelectAccount();
 
-  const onUpload = (results: typeof INITIAL_IMPORT_RESULTS) => {
-    console.log({ results });
-
-    setImportResults(results);
-    setVariant(VARIANTS.IMPORT);
-  };
-
-  const onCancelImport = () => {
-    setImportResults(INITIAL_IMPORT_RESULTS);
-    setVariant(VARIANTS.LIST);
-  };
-
-  const newTransaction = useNewTransaction();
-  const createTransactions = useBulkCreateTransactions();
-  const deleteTransactions = useBulkDeleteTransactions();
   const transactionsQuery = useGetTransactions();
   const totalTransactionsQuery = useGetTotalTransactions();
+  const deleteTransactions = useBulkDeleteTransactions();
+  const createTransactions = useBulkCreateTransactions();
+  const { data: accounts = [] } = useGetAccounts();
+  const { refreshAccount } = useAccounts();
+  const newTransaction = useNewTransaction();
+  const params = useSearchParams();
+  const queryClient = useQueryClient();
+
+  const accountId = params.get("accountId") || "all";
+  const isAllAccountsView = accountId === "all" || !accountId;
+  const selectedAccount = !isAllAccountsView
+    ? accounts.find((a) => a.account.id === accountId)
+    : null;
+  const hasLinkedBankAccount = !!selectedAccount?.account?.plaidId;
   const transactions = transactionsQuery.data || [];
+  const isDisabled =
+    transactionsQuery.isLoading || deleteTransactions.isPending;
 
-  const getTransactionsDescription = () => {
-    const count =
-      totalTransactionsQuery.data !== undefined
-        ? totalTransactionsQuery.data
-        : transactions.length;
-    return `You have a total of ${count} transaction${
-      count !== 1 ? "s" : ""
-    } recorded.`;
-  };
+  function handleUpload(results: typeof INITIAL_IMPORT_RESULTS) {
+    setImportResults(results);
+    setVariant(VARIANTS.IMPORT);
+  }
 
-  const onSubmitImport = async (
-    values: Array<{
-      payee: any;
-      amount: any;
-      date: any; // Can be string or Date from CSV parsing/mapping
-      notes?: any;
-      userCategoryId?: any;
-      predefinedCategoryId?: any;
-      [key: string]: any; // Allow other columns from CSV
-    }>
-  ) => {
+  function handleCancelImport() {
+    setImportResults(INITIAL_IMPORT_RESULTS);
+    setVariant(VARIANTS.LIST);
+  }
+
+  async function handleSubmitImport(values: Array<any>) {
     const selectedAccountId = await confirm();
-
     if (!selectedAccountId) {
       return toast.error("Please select an account to continue");
     }
-
-    const dataForApi: ExpectedApiInput[] = values.map((value) => {
-      const notesValue = value.notes;
-      const userCategoryIdValue = value.userCategoryId;
-      const predefinedCategoryIdValue = value.predefinedCategoryId;
-
-      return {
-        payee: String(value.payee),
-        amount: Number(value.amount),
-        // Ensure 'date' is a Date object
-        date:
-          value.date instanceof Date
-            ? value.date
-            : new Date(String(value.date)),
-        accountId: selectedAccountId as string,
-        notes:
-          notesValue === null ||
-          notesValue === undefined ||
-          String(notesValue).trim() === ""
-            ? undefined
-            : String(notesValue),
-        userCategoryId:
-          userCategoryIdValue === null ||
-          userCategoryIdValue === undefined ||
-          String(userCategoryIdValue).trim() === ""
-            ? undefined
-            : String(userCategoryIdValue),
-        predefinedCategoryId:
-          predefinedCategoryIdValue === null ||
-          predefinedCategoryIdValue === undefined ||
-          String(predefinedCategoryIdValue).trim() === ""
-            ? undefined
-            : String(predefinedCategoryIdValue),
-      };
-    });
-
+    const dataForApi = values.map((value) => ({
+      payee: String(value.payee),
+      amount: Number(value.amount),
+      date:
+        value.date instanceof Date ? value.date : new Date(String(value.date)),
+      accountId: selectedAccountId as string,
+      notes: value.notes ? String(value.notes) : undefined,
+      userCategoryId: value.userCategoryId
+        ? String(value.userCategoryId)
+        : undefined,
+      predefinedCategoryId: value.predefinedCategoryId
+        ? String(value.predefinedCategoryId)
+        : undefined,
+    }));
     createTransactions.mutate(dataForApi, {
       onSuccess: () => {
-        onCancelImport();
+        handleCancelImport();
         toast.success("Transactions imported successfully!");
       },
       onError: (error) => {
@@ -147,10 +113,32 @@ const TransactionsPage = () => {
         );
       },
     });
-  };
+  }
 
-  const isDisabled =
-    transactionsQuery.isLoading || deleteTransactions.isPending;
+  async function handleSync() {
+    setIsSyncing(true);
+    try {
+      if (isAllAccountsView) {
+        const plaidAccounts = accounts.filter((a) => !!a.account.plaidId);
+        if (plaidAccounts.length === 0) {
+          setIsSyncing(false);
+          return;
+        }
+        await Promise.all(
+          plaidAccounts.map((a) => refreshAccount(a.account.plaidId!))
+        );
+      } else if (hasLinkedBankAccount) {
+        await refreshAccount(selectedAccount.account.plaidId!);
+      }
+      queryClient.invalidateQueries({ queryKey: ["transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["accounts"] });
+      queryClient.invalidateQueries({ queryKey: ["summary"] });
+    } catch {
+      // Silenciar errores
+    } finally {
+      setIsSyncing(false);
+    }
+  }
 
   if (transactionsQuery.isLoading) {
     return (
@@ -170,18 +158,23 @@ const TransactionsPage = () => {
         <AccountDialog />
         <ImportCard
           data={importResults.data}
-          onCancel={onCancelImport}
-          onSubmit={onSubmitImport}
+          onCancel={handleCancelImport}
+          onSubmit={handleSubmitImport}
         />
       </>
     );
   }
 
+  const totalCount =
+    totalTransactionsQuery.data !== undefined
+      ? totalTransactionsQuery.data
+      : transactions.length;
+
   return (
     <>
       <PageHeader
         title="Transactions History"
-        description={getTransactionsDescription()}
+        description={getTransactionsDescription(totalCount)}
         filterArea={
           <div className="flex gap-4 items-center">
             <Input
@@ -203,7 +196,7 @@ const TransactionsPage = () => {
               <Plus className="size-4 mr-2" />
               Add new
             </Button>
-            <UploadButton onUpload={onUpload} />
+            <UploadButton onUpload={handleUpload} />
           </div>
         }
         className="mb-6"
@@ -220,11 +213,13 @@ const TransactionsPage = () => {
             }}
             disabled={isDisabled}
             initialFilterValue={filterValue}
+            hasLinkedBankAccount={hasLinkedBankAccount}
+            isAllAccountsView={isAllAccountsView}
+            onSync={handleSync}
+            isSyncing={isSyncing}
           />
         </div>
       </div>
     </>
   );
-};
-
-export default TransactionsPage;
+}

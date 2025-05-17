@@ -22,7 +22,7 @@ export const AccountColumn = ({ account, accountId }: Props) => {
         <CreditCard className="size-3.5 shrink-0 text-slate-400 group-hover:text-slate-600 transition-transform duration-200 group-hover:scale-110" />
       </div>
       <span className="truncate transition-all duration-200 group-hover:font-medium">
-        {account}
+      {account}
       </span>
     </div>
   );
