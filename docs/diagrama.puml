@@ -1,0 +1,127 @@
+@startuml Arquitectura de Ahorrito con Tecnologías
+
+' Ajustes para una orientación vertical
+skinparam pageDirection down
+skinparam linetype ortho
+skinparam nodesep 30
+skinparam ranksep 40
+skinparam packagePadding 10
+skinparam nodePadding 10
+
+' Configuración de colores
+skinparam backgroundColor white
+skinparam packageBackgroundColor transparent
+skinparam rectangleBackgroundColor white
+skinparam arrowColor #666666
+
+' Estilos personalizados para los diferentes tipos de componentes
+skinparam rectangle {
+    BorderColor #BBBBBB
+    shadowing false
+    roundCorner 8
+}
+
+skinparam package {
+    BorderColor #BBBBBB
+    FontColor #333333
+    shadowing false
+    BorderThickness 1
+}
+
+' Autenticación - Color azul suave
+package "Autenticación" {
+  rectangle "<color:#1E40AF><b>Clerk</b></color>\n@clerk/nextjs v6.14.3\n@clerk/backend v1.27.3\n@hono/clerk-auth v2.0.0" as ClerkAuth #E0E7FF {
+    rectangle "Middleware de Auth" as AuthMiddleware #EEF2FF
+    rectangle "Páginas de Auth\n(/sign-in, /sign-up)" as AuthPages #EEF2FF
+  }
+}
+
+' Frontend principal - Color verde suave
+package "Frontend (Next.js v15.3.0)" {
+  rectangle "<color:#15803D><b>App Router</b></color>\nReact v19.1.0\nReact DOM v19.1.0" as AppRouter #DCFCE7
+
+  rectangle "Proveedores Globales" as Providers #F0FDF4 {
+    rectangle "<color:#15803D><b>QueryProvider</b></color>\n@tanstack/react-query v5.74.3" as QueryProvider #DCFCE7
+    rectangle "<color:#1E40AF><b>ClerkProvider</b></color>\n@clerk/nextjs" as ClerkProvider #EEF2FF
+    rectangle "ThemeProvider\nnext-themes v0.4.6" as ThemeProvider #F0FDF4
+  }
+  
+  rectangle "UI Components" as UIComponents #F0FDF4 {
+    rectangle "<color:#7C2D12><b>Radix UI</b></color>\n@radix-ui/* (múltiples componentes)" as RadixUI #FEF3C7
+    rectangle "Lucide React\nlucide-react v0.487.0" as LucideReact #F0FDF4
+    rectangle "<color:#0E7490><b>Gráficos</b></color>\nrecharts v2.15.3" as Charts #CFFAFE
+    rectangle "<color:#9D174D><b>Form</b></color>\nreact-hook-form v7.55.0\n@hookform/resolvers v5.0.1\nzod v3.24.2" as Forms #FCE7F3
+    rectangle "<color:#047857><b>Tablas</b></color>\n@tanstack/react-table v8.21.3" as Tables #D1FAE5
+    rectangle "Notificaciones\nsonner v2.0.3" as Notifications #F0FDF4
+    rectangle "Utilidades\ndate-fns v4.1.0\nreact-countup v6.5.3" as Utils #F0FDF4
+  }
+  
+  rectangle "Estado Global" #F0FDF4 {
+    rectangle "<color:#4338CA><b>Zustand</b></color>\nzustand v5.0.3" as Zustand #EDE9FE
+  }
+}
+
+' API Backend - Color morado suave
+package "API Backend" {
+  rectangle "<color:#6D28D9><b>Hono</b></color>\nhono v4.7.6\n@hono/zod-validator v0.4.3" as Hono #EDE9FE {
+    rectangle "Rutas API" as ApiRoutes #F5F3FF {
+      rectangle "/api/summary" as ApiSummary #F5F3FF
+      rectangle "/api/transactions" as ApiTransactions #F5F3FF
+      rectangle "/api/categories" as ApiCategories #F5F3FF
+      rectangle "/api/accounts" as ApiAccounts #F5F3FF
+    }
+  }
+}
+
+' Base de Datos - Color naranja suave
+package "Base de Datos" {
+  rectangle "<color:#C2410C><b>Neon Postgres</b></color>\n@neondatabase/serverless v0.9.1" as NeonDB #FEF3C7 {
+    rectangle "<color:#B45309><b>ORM</b></color>\ndrizzle-orm v0.42.0\ndrizzle-zod v0.7.1\ndrizzle-kit v0.31.0" as DrizzleORM #FEF3C7 {
+      rectangle "Tablas" as Tables #FEF3C7 {
+        rectangle "Transacciones" as DbTransactions #FFFBEB
+        rectangle "Categorías" as DbCategories #FFFBEB
+        rectangle "Cuentas" as DbAccounts #FFFBEB
+      }
+    }
+  }
+}
+
+' Estructura de Componentes principales - Color cian suave
+package "Estructura de Páginas" {
+  rectangle "<color:#0E7490><b>Layout Raíz</b></color> (app/layout.tsx)" as RootLayout #ECFEFF
+  rectangle "<color:#0E7490><b>Dashboard Layout</b></color> (app/(dashboard)/layout.tsx)" as DashLayout #ECFEFF
+  
+  rectangle "Páginas Principales" as Pages #F0FDFA {
+    rectangle "Overview (/)" as OverviewPage #CCFBF1
+    rectangle "Transactions (/transactions)" as TransactionsPage #CCFBF1
+    rectangle "Categories (/categories)" as CategoriesPage #CCFBF1
+    rectangle "Accounts (/accounts)" as AccountsPage #CCFBF1
+  }
+  
+  rectangle "Componentes UI Clave" as KeyComponents #F0FDFA {
+    rectangle "<color:#0D9488><b>Header</b></color>" as Header #CCFBF1
+    rectangle "<color:#0D9488><b>DataGrid</b></color>" as DataGrid #CCFBF1
+    rectangle "<color:#0E7490><b>Gráficos</b></color>" as DataCharts #CFFAFE
+    rectangle "<color:#047857><b>DataTable</b></color>\n(con @tanstack/react-table)" as DataTable #D1FAE5
+    rectangle "<color:#9D174D><b>Formularios</b></color>\n(con react-hook-form)" as FormsComponent #FCE7F3
+  }
+} 
+
+' --- Relaciones ---
+AuthMiddleware -[#6366F1]-> DashLayout : Protege rutas
+
+RootLayout -[#10B981]-> Providers : Contiene
+Providers -[#10B981]-> AppRouter : Configura
+RootLayout -[#10B981]-> DashLayout : Renderiza
+DashLayout -[#10B981]-> Pages : Renderiza
+Pages -[#10B981]-> KeyComponents : Utiliza
+
+KeyComponents -[#06B6D4]-> UIComponents : Construido con
+KeyComponents -[#8B5CF6]-> Zustand : Gestión de estado
+KeyComponents -[#8B5CF6]-> QueryProvider : Consulta datos
+
+QueryProvider -[#8B5CF6]-> Hono : Llamadas API
+Hono -[#F59E0B]-> DrizzleORM : Accede a la DB
+DrizzleORM -[#F59E0B]-> NeonDB : Consulta
+
+@enduml

@@ -1,0 +1,1 @@
+ALTER TABLE "accounts" ADD CONSTRAINT "accounts_plaid_id_unique" UNIQUE("plaid_id");

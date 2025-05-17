@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "transaction_unique_idx" ON "transactions" USING btree ("account_id","amount","payee","date");

@@ -1,0 +1,364 @@
+import { Hono } from 'hono';
+import { clerkMiddleware, getAuth } from '@hono/clerk-auth';
+import { db } from '@/db/drizzle';
+import { accounts, transactions, bankConnections, accountBalances, categories, predefinedCategories } from '@/db/schema';
+import { createId } from '@paralleldrive/cuid2';
+import { eq, desc, sql, and } from 'drizzle-orm';
+import { convertAmountToMiliunits } from '@/lib/utils';
+
+const API_BASE_URL = 'https://api.truelayer.com';
+const AUTH_URL = 'https://auth.truelayer.com/connect/token';
+
+export type BankConnection = {
+    id: string;
+    userId: string;
+    accessToken: string;
+    refreshToken: string | null;
+    expiresAt: Date | null;
+};
+
+async function refreshAccessToken(connection: BankConnection): Promise<string> {
+    if (!connection.refreshToken) throw new Error('No hay refresh token disponible');
+    const response = await fetch(AUTH_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+            grant_type: 'refresh_token',
+            client_id: process.env.TRUELAYER_CLIENT_ID!,
+            client_secret: process.env.TRUELAYER_CLIENT_SECRET!,
+            refresh_token: connection.refreshToken,
+        }),
+    });
+    if (!response.ok) throw new Error(`Error al renovar token: ${await response.text()}`);
+    const data = await response.json();
+    const expiresAt = new Date();
+    expiresAt.setSeconds(expiresAt.getSeconds() + data.expires_in);
+    await db.update(bankConnections)
+        .set({
+            accessToken: data.access_token,
+            refreshToken: data.refresh_token || connection.refreshToken,
+            expiresAt,
+            updatedAt: new Date(),
+        })
+        .where(eq(bankConnections.id, connection.id))
+        .execute();
+    return data.access_token;
+}
+
+function isTokenExpired(expiresAt: Date | null): boolean {
+    if (!expiresAt) return true;
+    const now = new Date();
+    const expirationDate = new Date(expiresAt);
+    return now.getTime() > (expirationDate.getTime() - 5 * 60 * 1000);
+}
+
+function validateTransaction(transaction: any): boolean {
+    if (!transaction.amount || typeof transaction.amount !== 'number') return false;
+    if (!transaction.description || typeof transaction.description !== 'string') return false;
+    if (!transaction.timestamp || isNaN(new Date(transaction.timestamp).getTime())) return false;
+    return true;
+}
+
+function sanitizeText(text: string): string {
+    return text.replace(/[<>]/g, '');
+}
+
+async function getLastTransactionDate(accountId: string): Promise<Date | null> {
+    try {
+        const result = await db.query.transactions.findFirst({
+            where: eq(transactions.accountId, accountId),
+            orderBy: (transactions, { desc }) => [desc(transactions.date)],
+        });
+        return result?.date || null;
+    } catch {
+        return null;
+    }
+}
+
+const app = new Hono();
+
+app.use('/sync', clerkMiddleware());
+
+app.post('/sync', async (c) => {
+    const auth = getAuth(c);
+    if (!auth?.userId) {
+        return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const requestData = await c.req.json();
+    const { access_token, connection_id, force = false } = requestData;
+    const account_id = requestData.account_id || null;
+    const balanceOnly = requestData.balanceOnly === true;
+
+    let accessToken;
+    let connection;
+    const userId = auth.userId;
+
+    // Determinar qué token de acceso usar
+    if (access_token) {
+        accessToken = access_token;
+    } else if (connection_id) {
+        connection = await db.query.bankConnections.findFirst({
+            where: eq(bankConnections.id, connection_id),
+        });
+        if (!connection || connection.userId !== userId) {
+            return c.json({ error: 'Conexión no encontrada o no autorizada' }, 404);
+        }
+        if (isTokenExpired(connection.expiresAt)) {
+            try {
+                accessToken = await refreshAccessToken(connection);
+            } catch (error) {
+                return c.json({ error: 'No se pudo renovar el token de acceso', details: error instanceof Error ? error.message : 'Error desconocido' }, 401);
+            }
+        } else {
+            accessToken = connection.accessToken;
+        }
+    } else {
+        connection = await db.query.bankConnections.findFirst({
+            where: eq(bankConnections.userId, userId),
+            orderBy: (bankConnections, { desc }) => [desc(bankConnections.createdAt)],
+        });
+        if (!connection) {
+            return c.json({ error: 'No hay conexiones bancarias' }, 404);
+        }
+        if (isTokenExpired(connection.expiresAt)) {
+            try {
+                accessToken = await refreshAccessToken(connection);
+            } catch (error) {
+                return c.json({ error: 'No se pudo renovar el token de acceso', details: error instanceof Error ? error.message : 'Error desconocido' }, 401);
+            }
+        } else {
+            accessToken = connection.accessToken;
+        }
+    }
+
+    const accountResults = [];
+    const syncType = balanceOnly ? 'balance_only' : 'full_sync';
+    const targetAccount = account_id ? 'single_account' : 'all_accounts';
+    try {
+        const accountsRes = await fetch(`${API_BASE_URL}/data/v1/accounts`, {
+            headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        if (!accountsRes.ok) {
+            const errorText = await accountsRes.text();
+            return c.json({ error: 'Error al obtener cuentas', status: accountsRes.status, details: errorText }, 400);
+        }
+        const accountsData = await accountsRes.json();
+        const { results: accountsList } = accountsData;
+        const predefinedCats = await db.select({ id: predefinedCategories.id, name: predefinedCategories.name }).from(predefinedCategories);
+        for (const account of accountsList) {
+            if (account_id && account.account_id !== account_id) continue;
+            try {
+                const [savedAccount] = await db.insert(accounts)
+                    .values({
+                        id: createId(),
+                        plaidId: account.account_id,
+                        name: account.display_name || account.account_name,
+                        userId,
+                    })
+                    .onConflictDoUpdate({
+                        target: accounts.plaidId,
+                        set: { name: account.display_name || account.account_name },
+                    })
+                    .returning();
+                const balanceRes = await fetch(`${API_BASE_URL}/data/v1/accounts/${account.account_id}/balance`, {
+                    headers: { Authorization: `Bearer ${accessToken}` },
+                });
+                let balances = [];
+                if (balanceRes.ok) {
+                    const balanceData = await balanceRes.json();
+                    balances = balanceData.results;
+                    if (balances && balances.length > 0) {
+                        const balance = balances[0];
+                        await db.insert(accountBalances)
+                            .values({
+                                id: createId(),
+                                accountId: savedAccount.id,
+                                current: convertAmountToMiliunits(balance.current),
+                                available: balance.available ? convertAmountToMiliunits(balance.available) : null,
+                                currency: balance.currency,
+                                timestamp: new Date(),
+                            })
+                            .execute();
+                    }
+                    let fromDate: Date | null = null;
+                    let autoForce = false;
+                    if (!balanceOnly) {
+                        if (!force) {
+                            fromDate = await getLastTransactionDate(savedAccount.id);
+                            if (fromDate) {
+                                const now = new Date();
+                                const diffDays = (now.getTime() - fromDate.getTime()) / (1000 * 60 * 60 * 24);
+                                if (diffDays > 2) {
+                                    fromDate = null;
+                                    autoForce = true;
+                                }
+                            }
+                        }
+                        const transactionsUrl = new URL(`${API_BASE_URL}/data/v1/accounts/${account.account_id}/transactions`);
+                        let fromDateParam: string | null = null;
+                        if (!force && !autoForce && fromDate) {
+                            const nextDay = new Date(fromDate);
+                            nextDay.setDate(nextDay.getDate() + 1);
+                            fromDateParam = nextDay.toISOString().split('T')[0];
+                            transactionsUrl.searchParams.append('from', fromDateParam);
+                        }
+                        console.log('[SYNC] Requesting transactions', {
+                            accountId: savedAccount.id,
+                            force,
+                            autoForce,
+                            fromDateParam,
+                            url: transactionsUrl.toString(),
+                        });
+                        const transactionRes = await fetch(transactionsUrl.toString(), {
+                            headers: { Authorization: `Bearer ${accessToken}` },
+                        });
+                        if (transactionRes.ok) {
+                            const transactionData = await transactionRes.json();
+                            const fetchedCount = Array.isArray(transactionData.results) ? transactionData.results.length : 0;
+                            console.log('[SYNC][RAW_TRANSACTIONS] Fetched:', {
+                                accountId: savedAccount.id,
+                                count: fetchedCount,
+                                isFullSync: force || autoForce,
+                            });
+                            const allTransactions = transactionData.results || [];
+
+                            // Consultar las transacciones YA categorizadas en la BD para esta cuenta
+                            const existingCategorizedTxsInDb = await db.select({
+                                externalId: transactions.externalId,
+                                predefinedCategoryId: transactions.predefinedCategoryId,
+                                userCategoryId: transactions.userCategoryId,
+                            }).from(transactions)
+                                .where(
+                                    and(
+                                        eq(transactions.accountId, savedAccount.id),
+                                        sql`${transactions.predefinedCategoryId} IS NOT NULL OR ${transactions.userCategoryId} IS NOT NULL`
+                                    )
+                                );
+
+                            const alreadyCategorizedInDbMap = new Map();
+                            existingCategorizedTxsInDb.forEach(tx => {
+                                if (tx.externalId) {
+                                    alreadyCategorizedInDbMap.set(tx.externalId, {
+                                        predefinedCategoryId: tx.predefinedCategoryId,
+                                        userCategoryId: tx.userCategoryId
+                                    });
+                                }
+                            });
+
+                            for (let idx: number = 0; idx < allTransactions.length; idx++) {
+                                const tlTransaction: any = allTransactions[idx];
+                                if (!validateTransaction(tlTransaction)) continue;
+
+                                let userCategoryId = null;
+                                let predefinedCategoryId = null; // Por defecto null
+
+                                const existingCat = tlTransaction.transaction_id ? alreadyCategorizedInDbMap.get(tlTransaction.transaction_id) : null;
+
+                                if (existingCat) {
+                                    predefinedCategoryId = existingCat.predefinedCategoryId;
+                                    userCategoryId = existingCat.userCategoryId;
+                                } else if (tlTransaction.transaction_type === 'CREDIT') {
+                                    const incomeCat = predefinedCats.find(cat => cat.id === 'cat_income');
+                                    if (incomeCat) predefinedCategoryId = incomeCat.id;
+                                }
+                                // Si no es CREDIT y no está en `alreadyCategorizedInDbMap`, `predefinedCategoryId` se queda en null
+                                // Esto la marcará como "necesita categorización por IA" para el worker
+
+                                const sanitizedPayee = sanitizeText(tlTransaction.description);
+                                const sanitizedNotes = tlTransaction.transaction_category
+                                    ? `Categoría: ${sanitizeText(tlTransaction.transaction_category)}`
+                                    : undefined;
+                                const amount = typeof tlTransaction.amount === 'number'
+                                    ? convertAmountToMiliunits(tlTransaction.amount)
+                                    : convertAmountToMiliunits(parseFloat(tlTransaction.amount));
+
+                                const transactionValues = {
+                                    amount,
+                                    payee: sanitizedPayee,
+                                    notes: sanitizedNotes,
+                                    date: new Date(tlTransaction.timestamp),
+                                    accountId: savedAccount.id,
+                                    userCategoryId, // Se mantiene si ya existía
+                                    predefinedCategoryId, // Se asigna si es CREDIT o ya existía, sino null
+                                    externalId: tlTransaction.transaction_id || null,
+                                };
+
+                                await db.insert(transactions)
+                                    .values({
+                                        id: createId(),
+                                        ...transactionValues
+                                    })
+                                    .onConflictDoUpdate({
+                                        target: [transactions.accountId, transactions.amount, transactions.payee, transactions.date],
+                                        set: { // Solo actualizamos ciertos campos para no sobrescribir una categoría manual o de IA ya puesta
+                                            notes: sanitizedNotes,
+                                            externalId: tlTransaction.transaction_id || sql`excluded.external_id`,
+                                            // Si ya tenía categoría (manual o de IA), no la tocamos aquí
+                                            // Si es una transacción nueva y es CREDIT, se pone 'cat_income'
+                                            // Si es nueva y no es CREDIT, predefinedCategoryId será null
+                                            predefinedCategoryId: sql`CASE WHEN excluded.predefined_category_id IS NOT NULL THEN excluded.predefined_category_id ELSE ${predefinedCategoryId} END`,
+                                            userCategoryId: sql`excluded.user_category_id` // No tocar la userCategoryId aquí
+                                        }
+                                    });
+                            }
+                        } else {
+                            // Error importante: fetch de transacciones
+                            const errorText = await transactionRes.text();
+                            console.error('[SYNC][ERROR] Error fetching transactions:', {
+                                accountId: savedAccount.id,
+                                status: transactionRes.status,
+                                text: errorText,
+                            });
+                        }
+                    }
+                }
+                // Contar las transacciones reales en la base de datos para esta cuenta
+                const transactionCount = await db
+                    .select({ count: sql<number>`cast(count(${transactions.id}) as int)` })
+                    .from(transactions)
+                    .where(eq(transactions.accountId, savedAccount.id))
+                    .then(result => result[0]?.count || 0);
+                accountResults.push({
+                    account: savedAccount,
+                    balance: balances[0] || null,
+                    transactions: transactionCount,
+                    diagnostics: null,
+                });
+            } catch (accountError) {
+                // Error importante: error al procesar cuenta
+                console.error('[SYNC][ACCOUNT_ERROR]', account.account_id, accountError);
+                // No hagas throw, sigue con las demás cuentas
+            }
+        }
+        if (connection) {
+            await db.update(bankConnections)
+                .set({ lastSyncedAt: new Date() })
+                .where(eq(bankConnections.id, connection.id))
+                .execute();
+        }
+        return c.json({
+            success: true,
+            accounts: accountResults,
+            lastSynced: new Date(),
+            balanceOnly,
+            syncType,
+            targetAccount,
+        });
+    } catch (error: any) {
+        if (accountResults.length > 0) {
+            return c.json({
+                success: true,
+                accounts: accountResults,
+                lastSynced: new Date(),
+                balanceOnly,
+                syncType,
+                targetAccount,
+                warning: 'Hubo errores parciales: ' + (error?.message || 'Error desconocido'),
+            });
+        }
+        return c.json({ error: 'Error durante la sincronización', details: error?.message || 'Error desconocido' }, 500);
+    }
+});
+
+export default app;

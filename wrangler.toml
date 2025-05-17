@@ -1,0 +1,16 @@
+name = "ahorrito-categorization-worker"
+main = "./app/workers/categorization.worker.js"
+compatibility_date = "2023-12-01"
+
+[[bindings]]
+type = "ratelimit"
+name = "GEMINI_RATELIMITER"
+global = true
+limit = 120 # Aumentado de 100 a 120 (ajusta según el límite real de tu API de Gemini)
+duration = 60 # 120 peticiones por minuto
+
+# Opcional: Si necesitas variables de entorno, define:
+[vars]
+MIN_BATCH_SIZE = 1
+MAX_BATCH_SIZE = 40 # Aumentado para coincidir con el cambio en el endpoint interno
+BASE_INTERVAL = 3000 # Reducido de 5000ms a 3000ms para más velocidad 
