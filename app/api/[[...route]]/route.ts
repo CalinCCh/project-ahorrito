@@ -10,6 +10,7 @@ import geminiRoutes from "./gemini";
 import truelayerRoutes from "./truelayer";
 import userStatsRoutes from "./user-stats";
 import internalCategorizationWorkerRoutes from "./internal-categorization-worker";
+import stripeRoutes from "./stripe";
 
 export const runtime = 'edge'
 
@@ -26,7 +27,8 @@ const routes = app
   .route("/gemini", geminiRoutes)
   .route("/truelayer", truelayerRoutes)
   .route("/user-stats", userStatsRoutes)
-  .route("/internal-categorization-worker", internalCategorizationWorkerRoutes);
+  .route("/internal-categorization-worker", internalCategorizationWorkerRoutes)
+  .route("/stripe", stripeRoutes);
 
 console.log('[HONO CONFIG] Rutas configuradas:', Object.keys(routes));
 

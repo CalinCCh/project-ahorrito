@@ -21,6 +21,8 @@ import {
   LogOut,
 } from "lucide-react";
 import { useUser, useClerk } from "@clerk/nextjs";
+import { useState } from "react";
+import { plans } from "@/lib/stripe-plans";
 
 const menuItems = [
   {
@@ -50,10 +52,17 @@ export const Sidebar = () => {
   const router = useRouter();
   const { user, isLoaded } = useUser();
   const { signOut, openUserProfile } = useClerk();
+  const monthlyPlan = plans.find((p) => p.name === "Pro Monthly");
+  const isMonthlyAvailable =
+    monthlyPlan && monthlyPlan.priceId.startsWith("price_");
 
   const handleSignOut = async () => {
     await signOut();
     router.push("/sign-in");
+  };
+
+  const handleUpgrade = () => {
+    router.push("/pricing");
   };
 
   return (
@@ -86,10 +95,18 @@ export const Sidebar = () => {
             PRO
           </span>
           <p className="text-xs opacity-90 mb-4 text-center">
-            Contenido de relleno para la descripción del plan Pro.
+            Unlock all premium features and take control of your finances.
           </p>
-          <button className="w-full py-2 px-4 rounded-lg bg-white text-blue-700 font-bold shadow-md hover:bg-blue-100 transition-colors text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white">
-            ¡Mejorar a Pro!
+          <button
+            className={
+              isMonthlyAvailable
+                ? "w-full py-2 px-4 rounded-lg bg-white text-blue-700 font-bold shadow-md hover:bg-blue-100 transition-colors text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white"
+                : "w-full py-2 px-4 rounded-lg bg-gray-300 text-gray-500 font-bold shadow-md cursor-not-allowed text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white"
+            }
+            onClick={handleUpgrade}
+            disabled={!isMonthlyAvailable}
+          >
+            {isMonthlyAvailable ? "Upgrade to Pro" : "Not available"}
           </button>
         </div>
 
