@@ -24,22 +24,25 @@ export const useGetSummary = () => {
 
             if (!response.ok) {
                 throw new Error('Failed to fetch summary');
+            } const { data } = await response.json()
+
+            if (!data) {
+                return null;
             }
 
-            const { data } = await response.json()
             return {
                 ...data,
-                incomeAmount: convertAmountFromMiliunits(data.incomeAmount),
-                expensesAmount: convertAmountFromMiliunits(data.expensesAmount),
-                remainingAmount: convertAmountFromMiliunits(data.remainingAmount),
-                categories: data.categories.map((category: any) => ({
+                incomeAmount: convertAmountFromMiliunits(data.incomeAmount || 0),
+                expensesAmount: convertAmountFromMiliunits(data.expensesAmount || 0),
+                remainingAmount: convertAmountFromMiliunits(data.remainingAmount || 0),
+                categories: (data.categories || []).map((category: any) => ({
                     ...category,
-                    value: convertAmountFromMiliunits(category.value),
+                    value: convertAmountFromMiliunits(category.value || 0),
                 })),
-                days: data.days.map((day: any) => ({
+                days: (data.days || []).map((day: any) => ({
                     ...day,
-                    income: convertAmountFromMiliunits(day.income),
-                    expenses: convertAmountFromMiliunits(day.expenses),
+                    income: convertAmountFromMiliunits(day.income || 0),
+                    expenses: convertAmountFromMiliunits(day.expenses || 0),
                 })),
             }
         }

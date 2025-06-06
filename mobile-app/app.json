@@ -1,0 +1,32 @@
+{
+  "expo": {
+    "name": "Ahorrito",
+    "slug": "ahorrito-finance",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#3B82F6",
+      "resizeMode": "contain"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.ahorrito.finance",
+      "buildNumber": "1.0.0"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#3B82F6"
+      },
+      "package": "com.ahorrito.finance",
+      "versionCode": 1
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "sdkVersion": "53.0.0"
+  }
+}

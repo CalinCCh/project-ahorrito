@@ -1,3 +1,6 @@
+"use client";
+
+// filepath: d:\react\project-ahorrito\components\forms\DatePicker.tsx
 import * as React from "react";
 import { format } from "date-fns";
 import { CalendarDays, Calendar as CalendarIcon } from "lucide-react";

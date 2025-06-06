@@ -14,11 +14,20 @@ export function convertAmountFromMiliunits(amount: number) {
   return amount / 1000
 }
 
-export function formatCurrency(value: number) {
+export function formatCurrency(value: number, currency?: string) {
+  const currencyCode = currency || "EUR";
 
-  return Intl.NumberFormat("en-US", {
+  // Use appropriate locale based on currency
+  let locale = "en-US";
+  if (currencyCode === "EUR") {
+    locale = "es-ES"; // Spanish locale places EUR symbol after the value
+  } else if (currencyCode === "GBP") {
+    locale = "en-GB"; // British locale for GBP
+  }
+
+  return Intl.NumberFormat(locale, {
     style: "currency",
-    currency: "USD",
+    currency: currencyCode,
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(value)

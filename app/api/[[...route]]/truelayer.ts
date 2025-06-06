@@ -94,7 +94,6 @@ app.post('/sync', async (c) => {
     let connection;
     const userId = auth.userId;
 
-    // Determinar qué token de acceso usar
     if (access_token) {
         accessToken = access_token;
     } else if (connection_id) {
@@ -358,6 +357,145 @@ app.post('/sync', async (c) => {
             });
         }
         return c.json({ error: 'Error durante la sincronización', details: error?.message || 'Error desconocido' }, 500);
+    }
+});
+
+app.post('/exchange-token', clerkMiddleware(), async (c) => {
+    const auth = getAuth(c);
+    if (!auth?.userId) {
+        return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    let codeFromBody;
+    try {
+        const body = await c.req.json();
+        codeFromBody = body.code;
+    } catch (e) {
+        return c.json({ error: 'Invalid request body' }, 400);
+    }
+
+    if (!codeFromBody) {
+        return c.json({ error: 'Code is required' }, 400);
+    }
+
+    if (typeof codeFromBody !== 'string' || codeFromBody.length > 2048) {
+        return c.json({ error: 'Invalid code format' }, 400);
+    }
+
+    const userId = auth.userId;
+
+    try {
+        const response = await fetch(AUTH_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({
+                grant_type: 'authorization_code',
+                client_id: process.env.TRUELAYER_CLIENT_ID!,
+                client_secret: process.env.TRUELAYER_CLIENT_SECRET!,
+                redirect_uri: process.env.TRUELAYER_REDIRECT_URI!, 
+                code: codeFromBody,
+            }),
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('[EXCHANGE_TOKEN] Error de TrueLayer API al intercambiar token:', { status: response.status, errorText });
+            return c.json({ error: 'Failed to exchange token with TrueLayer', details: errorText }, response.status as any);
+        }
+
+        const tokenData = await response.json();
+        console.log('[EXCHANGE_TOKEN] Token exchange successful');
+
+        const expiresAt = new Date();
+        expiresAt.setSeconds(expiresAt.getSeconds() + tokenData.expires_in);
+
+        let institutionIdFromProvider: string | null = null;
+        let institutionNameFromProvider: string | null = null;
+
+        // Intentar obtener información del proveedor desde el endpoint /me de TrueLayer
+        // TrueLayer recomienda obtener el provider_id y display_name de esta manera.
+        if (tokenData.access_token) {
+            console.log('[EXCHANGE_TOKEN] Obteniendo información del proveedor desde /data/v1/me');
+            try {
+                const meResponse = await fetch(`${API_BASE_URL}/data/v1/me`, {
+                    headers: { Authorization: `Bearer ${tokenData.access_token}` },
+                });
+
+                if (meResponse.ok) {
+                    const meData = await meResponse.json();
+                    if (meData.results && meData.results.length > 0) {
+                        const providerDetails = meData.results[0].provider;
+                        institutionIdFromProvider = providerDetails?.provider_id || null;
+                        institutionNameFromProvider = providerDetails?.display_name || null;
+                        console.log('[EXCHANGE_TOKEN] Detalles del proveedor obtenidos:', { institutionIdFromProvider, institutionNameFromProvider });
+                    } else {
+                        console.warn('[EXCHANGE_TOKEN] Respuesta de /me sin resultados o vacía:', meData);
+                    }
+                } else {
+                    const meErrorText = await meResponse.text();
+                    console.warn('[EXCHANGE_TOKEN] No se pudo obtener /me de TrueLayer:', { status: meResponse.status, meErrorText });
+                }
+            } catch (meError) {
+                console.warn('[EXCHANGE_TOKEN] Error al llamar a /me de TrueLayer:', meError);
+            }
+        } else {
+            console.warn('[EXCHANGE_TOKEN] No access_token in TrueLayer response, skipping /me call.');
+        }
+
+        const existingConnection = await db.query.bankConnections.findFirst({
+            where: and(
+                eq(bankConnections.userId, userId),
+                // Si tienes institutionIdFromProvider, úsalo para verificar si la conexión específica ya existe.
+                // Si no, al menos verifica que no haya otra conexión de truelayer sin institutionId.
+                institutionIdFromProvider
+                    ? eq(bankConnections.institutionId, institutionIdFromProvider)
+                    : eq(bankConnections.provider, 'truelayer')
+            ),
+        });
+
+        const connectionValues = {
+            userId,
+            provider: 'truelayer',
+            accessToken: tokenData.access_token,
+            refreshToken: tokenData.refresh_token,
+            expiresAt,
+            institutionId: institutionIdFromProvider,
+            institutionName: institutionNameFromProvider,
+            status: 'active',
+            updatedAt: new Date(),
+            lastSyncedAt: null,
+        };
+
+        let newConnectionId;
+
+        if (existingConnection) {
+            console.log(`[EXCHANGE_TOKEN] Actualizando conexión bancaria existente ID: ${existingConnection.id}`);
+            await db.update(bankConnections)
+                .set(connectionValues)
+                .where(eq(bankConnections.id, existingConnection.id));
+            newConnectionId = existingConnection.id;
+        } else {
+            newConnectionId = createId();
+            console.log(`[EXCHANGE_TOKEN] Creando nueva conexión bancaria ID: ${newConnectionId}`);
+            await db.insert(bankConnections)
+                .values({
+                    id: newConnectionId,
+                    ...connectionValues,
+                    createdAt: new Date(),
+                });
+        }
+
+        console.log('[EXCHANGE_TOKEN] Conexión bancaria procesada y guardada/actualizada en DB.');
+
+        return c.json({
+            message: 'Token exchanged and bank connection processed successfully.',
+            access_token: tokenData.access_token, // Devuelve el access_token para la sincronización inicial
+            connection_id: newConnectionId, // Devuelve el ID de la conexión para referencia futura
+        });
+
+    } catch (error) {
+        console.error('[EXCHANGE_TOKEN] Error general durante el intercambio de token:', error);
+        return c.json({ error: 'Internal server error during token exchange', details: error instanceof Error ? error.message : String(error) }, 500);
     }
 });
 

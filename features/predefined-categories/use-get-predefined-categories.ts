@@ -5,6 +5,7 @@ type PredefinedCategory = {
     id: string;
     name: string;
     emoji: string;
+    icon?: string;
 };
 
 export const useGetPredefinedCategories = () => {

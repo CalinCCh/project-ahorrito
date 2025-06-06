@@ -12,18 +12,13 @@ import { sql, eq, and, isNull, asc } from 'drizzle-orm';
 
 const app = new Hono();
 
-// Parámetros de configuración
 const DEFAULT_BATCH_SIZE = 5;
-const MAX_BATCH_SIZE = 40; // Aumentado para permitir procesamiento de lotes más grandes
+const MAX_BATCH_SIZE = 40;
 
-// Caché de categorización - para mantener consistencia entre ejecuciones
-// Esta caché se mantendrá mientras el servidor esté activo
 const categorizationCache = new Map<string, string>();
 
-// Función para cargar la caché inicial desde la base de datos
 async function loadCategorizationCache() {
     try {
-        // Seleccionar transacciones ya categorizadas
         const categorizedTransactions = await db
             .select({
                 payee: transactions.payee,
@@ -37,7 +32,6 @@ async function loadCategorizationCache() {
                 )
             );
 
-        // Contar cuántas veces se ha asignado cada categoría a cada payee
         const payeeCategoryCount = new Map<string, Map<string, number>>();
 
         for (const tx of categorizedTransactions) {
@@ -217,11 +211,9 @@ app.post('/run', async (c) => {
                                 .where(eq(transactions.id, originalTransaction.id));
                             categorizedCount++;
 
-                            // Agregar a la caché si tiene payee
                             if (originalTransaction.payee) {
                                 const payeeKey = originalTransaction.payee.toLowerCase().trim();
                                 categorizationCache.set(payeeKey, fallbackCategory.id);
-                                console.log(`[CACHE] Añadida nueva entrada: "${originalTransaction.payee}" → "${fallbackCategory.name}"`);
                             }
 
                             console.log(`[INTERNAL-WORKER] Sobreescrita categoría "Income" con "${fallbackCategory.name}" para tx: ${originalTransaction.id}`);

@@ -33,22 +33,30 @@ export const Actions = ({ id }: Props) => {
     <>
       <ConfirmDialog />
       <DropdownMenu>
+        {" "}
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="size-8 p-0">
+          <Button
+            variant="ghost"
+            className="size-8 p-0 cursor-pointer"
+            aria-label="Transaction actions"
+          >
             <MoreHorizontal className="size-4" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
+          {" "}
           <DropdownMenuItem
             disabled={deleteMutation.isPending}
             onClick={() => onOpen(id)}
+            className="cursor-pointer"
           >
             <Edit className="size-4 mr-2" />
             Edit
-          </DropdownMenuItem>
+          </DropdownMenuItem>{" "}
           <DropdownMenuItem
             disabled={deleteMutation.isPending}
             onClick={handleDelete}
+            className="cursor-pointer"
           >
             <Trash className="size-4 mr-2" />
             Delete

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { GeistSans } from "geist/font/sans";
+import { GeistMono } from "geist/font/mono";
 
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
@@ -8,22 +9,9 @@ import { QueryProvider } from "@/providers/query-provider";
 import { SheetProvider } from "@/providers/sheet-provider";
 import { Toaster } from "@/components/ui/sonner";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-  display: "swap",
-  weight: ["400", "500", "600", "700"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-  display: "swap",
-});
-
 export const metadata: Metadata = {
-  title: "Ahorrito - Tu app de ahorro",
-  description: "Gestiona tus ahorros de manera eficiente",
+  title: "Ahorrito - Personal Finance Hub",
+  description: "Manage your finances efficiently with smart insights",
 };
 
 export default function RootLayout({
@@ -33,7 +21,7 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider>
-      <html lang="es" className={`${geistSans.variable} ${geistMono.variable}`}>
+      <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`}>
         <body className="antialiased font-sans">
           <QueryProvider>
             <SheetProvider />

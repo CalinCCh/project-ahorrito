@@ -42,7 +42,11 @@ export const Actions = ({ id, onDelete }: Props) => {
       <ConfirmDialog />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="size-8 p-0">
+          <Button
+            variant="ghost"
+            className="size-8 p-0"
+            aria-label="Account actions"
+          >
             <MoreHorizontal className="size-4" />
           </Button>
         </DropdownMenuTrigger>

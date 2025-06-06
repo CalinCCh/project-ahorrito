@@ -1,0 +1,45 @@
+{
+  "mcpServers": {
+    "context7": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@upstash/context7-mcp@latest"
+      ]
+    },
+    "Neon": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://mcp.neon.tech/sse"
+      ],
+      "env": {
+        "NEON_API_KEY": "napi_uojb714mflqfhw3c4z3ev1v5f7wp9mlp6fcjx1ihq9vfz43zvougyn2v2v9g5qu0"
+      },
+      "alwaysAllow": [
+        "describe_table_schema",
+        "list_projects",
+        "describe_project",
+        "describe_branch",
+        "explain_sql_statement",
+        "execute_sql",
+        "query_database",
+        "run_sql",
+        "create_project",
+        "delete_project",
+        "run_sql_transaction",
+        "create_branch",
+        "execute_query",
+        "sql_query",
+        "list_branches",
+        "query",
+        "run_query",
+        "list_databases",
+        "execute",
+        "get_database_tables"
+      ],
+      "disabled": true
+    }
+  }
+}

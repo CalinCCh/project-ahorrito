@@ -11,12 +11,17 @@ import truelayerRoutes from "./truelayer";
 import userStatsRoutes from "./user-stats";
 import internalCategorizationWorkerRoutes from "./internal-categorization-worker";
 import stripeRoutes from "./stripe";
+import aiAssistantRoutes from "./ai-assistant";
+import savingsGoalsRoutes from "./savings-goals";
+import savingsContributionsRoutes from "./savings-contributions";
+import achievementsRoutes from "./achievements";
+import subscriptionsRoutes from "./subscriptions";
+import adminRoutes from "./admin";
+import userLevelsRoutes from "./user-levels";
 
 export const runtime = 'edge'
 
 const app = new Hono().basePath('/api')
-
-console.log('[HONO CONFIG] Configurando rutas de API...');
 
 const routes = app
   .route("/accounts", accounts)
@@ -28,7 +33,14 @@ const routes = app
   .route("/truelayer", truelayerRoutes)
   .route("/user-stats", userStatsRoutes)
   .route("/internal-categorization-worker", internalCategorizationWorkerRoutes)
-  .route("/stripe", stripeRoutes);
+  .route("/stripe", stripeRoutes)
+  .route("/ai-assistant", aiAssistantRoutes)
+  .route("/savings-goals", savingsGoalsRoutes)
+  .route("/savings-contributions", savingsContributionsRoutes)
+  .route("/achievements", achievementsRoutes)
+  .route("/subscriptions", subscriptionsRoutes)
+  .route("/admin", adminRoutes)
+  .route("/user-levels", userLevelsRoutes);
 
 console.log('[HONO CONFIG] Rutas configuradas:', Object.keys(routes));
 

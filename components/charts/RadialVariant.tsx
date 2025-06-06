@@ -7,16 +7,17 @@ import {
 
 import { formatCurrency } from "@/lib/utils";
 
-const COLORS = ["#0062FF", "#12C6FF", "#FF647F", "#FF9354"];
+const COLORS = ["#0062FF", "#12C6FF", "#FF647F", "#FF9354", "#8B5CF6"];
 
 type Props = {
   data: {
     name: string;
     value: number;
   }[];
+  currency?: string;
 };
 
-export const RadialVariant = ({ data = [] }: Props) => {
+export const RadialVariant = ({ data = [], currency = "EUR" }: Props) => {
   return (
     <ResponsiveContainer width="100%" height={300}>
       <RadialBarChart
@@ -59,9 +60,9 @@ export const RadialVariant = ({ data = [] }: Props) => {
                     <div className="space-x-1">
                       <span className="text-sm text-muted-foreground">
                         {entry.value}
-                      </span>
+                      </span>{" "}
                       <span className="text-sm">
-                        {formatCurrency(entry.payload.value)}
+                        {formatCurrency(entry.payload.value, currency)}
                       </span>
                     </div>
                   </li>

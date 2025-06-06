@@ -1,8 +1,8 @@
+import React, { memo, useCallback, useMemo } from "react";
 import { z } from "zod";
 import { Trash } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -31,7 +31,7 @@ const formSchema = z
     payee: z.string(),
     amount: z.string(),
     notes: z.string().nullable().optional(),
-    categoryType: z.enum(["user", "predefined", "none"]).default("none"),
+    categoryType: z.enum(["user", "predefined", "none"]),
   })
   .refine(
     (data) => {
@@ -48,8 +48,15 @@ const formSchema = z
     }
   );
 
-const apiSchema = insertTransactionSchema.omit({
-  id: true,
+// Define API schema separately to avoid type conflicts
+const apiSchema = z.object({
+  date: z.coerce.date(),
+  accountId: z.string(),
+  userCategoryId: z.string().nullable().optional(),
+  predefinedCategoryId: z.string().nullable().optional(),
+  payee: z.string(),
+  amount: z.number(),
+  notes: z.string().nullable().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -68,7 +75,7 @@ type Props = {
   onCreateCategory: (name: string) => void;
 };
 
-export const TransactionForm = ({
+export const TransactionForm = memo<Props>(function TransactionForm({
   id,
   defaultValues,
   onSubmit,
@@ -79,45 +86,62 @@ export const TransactionForm = ({
   predefinedCategoryOptions,
   onCreateAccount,
   onCreateCategory,
-}: Props) => {
-  const initialCategoryType = defaultValues?.userCategoryId
-    ? "user"
-    : defaultValues?.predefinedCategoryId
-    ? "predefined"
-    : "none";
-
-  const form = useForm<FormValues>({
+}) {
+  // Memoize initial category type calculation
+  const initialCategoryType = useMemo(
+    () =>
+      defaultValues?.userCategoryId
+        ? "user"
+        : defaultValues?.predefinedCategoryId
+        ? "predefined"
+        : "none",
+    [defaultValues?.userCategoryId, defaultValues?.predefinedCategoryId]
+  );  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      ...defaultValues,
+      date: new Date(),
+      accountId: "",
+      userCategoryId: null,
+      predefinedCategoryId: null,
+      payee: "",
+      amount: "",
+      notes: null,
       categoryType: initialCategoryType,
+      ...defaultValues,
     },
   });
 
   const watchCategoryType = form.watch("categoryType");
 
-  const handleSubmit = (values: FormValues) => {
-    const cleanAmount = values.amount.replace(",", ".").replace(/[^\d.-]/g, "");
-    const amount = parseFloat(cleanAmount);
-    const amountInMiliunits = convertAmountToMiliunits(amount);
+  // Memoize submit handler for performance
+  const handleSubmit = useCallback(
+    (values: FormValues) => {
+      const cleanAmount = values.amount
+        .replace(",", ".")
+        .replace(/[^\d.-]/g, "");
+      const amount = parseFloat(cleanAmount);
+      const amountInMiliunits = convertAmountToMiliunits(amount);
 
-    const submissionValues = {
-      ...values,
-      userCategoryId:
-        values.categoryType === "user" ? values.userCategoryId : null,
-      predefinedCategoryId:
-        values.categoryType === "predefined"
-          ? values.predefinedCategoryId
-          : null,
-      amount: amountInMiliunits,
-    };
+      const submissionValues = {
+        ...values,
+        userCategoryId:
+          values.categoryType === "user" ? values.userCategoryId : null,
+        predefinedCategoryId:
+          values.categoryType === "predefined"
+            ? values.predefinedCategoryId
+            : null,
+        amount: amountInMiliunits,
+      };
 
-    onSubmit(submissionValues);
-  };
+      onSubmit(submissionValues);
+    },
+    [onSubmit]
+  );
 
-  const handleDelete = () => {
+  // Memoize delete handler
+  const handleDelete = useCallback(() => {
     onDelete?.();
-  };
+  }, [onDelete]);
 
   const handleCategoryTypeChange = (value: string) => {
     if (value === "user") {
@@ -179,7 +203,6 @@ export const TransactionForm = ({
             </FormItem>
           )}
         />
-
         <FormField
           name="categoryType"
           control={form.control}
@@ -249,7 +272,6 @@ export const TransactionForm = ({
             </FormItem>
           )}
         />
-
         <FormField
           name="payee"
           control={form.control}
@@ -300,17 +322,15 @@ export const TransactionForm = ({
             </FormItem>
           )}
         />
-
         <Button className="w-full cursor-pointer" disabled={disabled}>
           {id ? "Save changes" : "Create transaction"}
-        </Button>
-
+        </Button>{" "}
         {!!id && (
           <Button
             type="button"
             disabled={disabled}
             onClick={handleDelete}
-            className="w-full"
+            className="w-full cursor-pointer"
             variant="outline"
           >
             <Trash className="size-4 mr-2" />
@@ -320,4 +340,4 @@ export const TransactionForm = ({
       </form>
     </Form>
   );
-};
+});

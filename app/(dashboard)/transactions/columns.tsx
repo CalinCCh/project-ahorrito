@@ -21,35 +21,46 @@ import { format } from "date-fns";
 import { formatCurrency, convertAmountFromMiliunits } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { AccountColumn } from "./account-column";
-import { CategoryColumn } from "./category-column ";
-import { useState } from "react";
+import { CategoryColumn } from "./category-column";
+import { useOpenTransaction } from "@/features/transactions/hooks/use-open-transaction";
+import { cn } from "@/lib/utils";
 
 export type ResponseType = InferResponseType<
   typeof client.api.transactions.$get,
   200
 >["data"][0];
 
-export const columns: ColumnDef<ResponseType>[] = [
+export const getColumns = (
+  hasLinkedBankAccount: boolean = false,
+  isAllAccountsView: boolean = false
+): ColumnDef<ResponseType>[] => {
+  const shouldShowActions = !hasLinkedBankAccount && !isAllAccountsView;
+  
+  const baseColumns: ColumnDef<ResponseType>[] = [
   {
     id: "select",
     header: ({ table }) => (
-      <Checkbox
-        checked={
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && "indeterminate")
-        }
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Select all"
-        className="rounded-md border-slate-300 text-blue-600 focus:ring-blue-500/20"
-      />
+      <div className="flex items-center justify-center w-full">
+        <Checkbox
+          checked={
+            table.getIsAllRowsSelected() ||
+            (table.getIsSomeRowsSelected() && "indeterminate")
+          }
+          onCheckedChange={(value) => table.toggleAllRowsSelected(!!value)}
+          aria-label="Select all"
+          className="rounded-md border-slate-300 text-blue-600 focus:ring-blue-500/20"
+        />
+      </div>
     ),
     cell: ({ row }) => (
-      <Checkbox
-        checked={row.getIsSelected()}
-        onCheckedChange={(value) => row.toggleSelected(!!value)}
-        aria-label="Select row"
-        className="rounded-md border-slate-300 text-blue-600 focus:ring-blue-500/20"
-      />
+      <div className="flex items-center justify-center w-full">
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Select row"
+          className="rounded-md border-slate-300 text-blue-600 focus:ring-blue-500/20"
+        />
+      </div>
     ),
     enableSorting: false,
     enableHiding: false,
@@ -138,6 +149,7 @@ export const columns: ColumnDef<ResponseType>[] = [
             row.original.userCategoryId || row.original.predefinedCategoryId
           }
           emoji={row.original.categoryEmoji}
+          icon={row.original.categoryIcon}
         />
       );
     },
@@ -175,10 +187,22 @@ export const columns: ColumnDef<ResponseType>[] = [
       );
     },
     cell: ({ row }) => {
+      const { onOpen } = useOpenTransaction();
       return (
-        <span className="font-normal text-slate-800 pl-2.5">
-          {row.getValue("payee") as string}
-        </span>
+        <div
+          onClick={() => onOpen(row.original.id)}
+          className={cn(
+            "flex items-center w-full cursor-pointer px-2 rounded-lg transition-all duration-300 group h-11 max-w-full",
+            "hover:bg-gradient-to-r hover:from-white hover:to-slate-50/80",
+            "hover:shadow-md hover:shadow-slate-200/50 hover:-translate-y-0.5",
+            "border border-transparent hover:border-slate-200/50",
+            "backdrop-blur-sm"
+          )}
+        >
+          <span className="font-normal text-slate-800 pl-0.5 transition-all duration-200 group-hover:text-slate-900 truncate flex-1 min-w-0">
+            {row.getValue("payee") as string}
+          </span>
+        </div>
       );
     },
     size: 250,
@@ -218,6 +242,7 @@ export const columns: ColumnDef<ResponseType>[] = [
       const rawAmount = parseFloat(row.getValue("amount"));
       const amount = convertAmountFromMiliunits(rawAmount);
       const isNegative = rawAmount < 0;
+      const currency = row.original.currency || "EUR";
 
       return (
         <div className="flex items-center">
@@ -234,7 +259,7 @@ export const columns: ColumnDef<ResponseType>[] = [
           >
             <span className="font-medium tabular-nums tracking-tight">
               {isNegative ? "−" : "+"}
-              {formatCurrency(Math.abs(amount)).replace("-", "")}
+              {formatCurrency(Math.abs(amount), currency).replace("-", "")}
             </span>
           </div>
         </div>
@@ -283,9 +308,19 @@ export const columns: ColumnDef<ResponseType>[] = [
     },
     size: 160,
   },
-  {
-    id: "actions",
-    cell: ({ row }) => <Actions id={row.original.id} />,
-    size: 50,
-  },
-];
+  ];
+
+  // Conditionally add actions column
+  if (shouldShowActions) {
+    baseColumns.push({
+      id: "actions",
+      cell: ({ row }) => <Actions id={row.original.id} />,
+      size: 50,
+    });
+  }
+
+  return baseColumns;
+};
+
+// Export default columns for backward compatibility
+export const columns = getColumns();

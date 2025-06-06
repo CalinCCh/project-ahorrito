@@ -42,12 +42,18 @@ export const useConfirm = (
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{message}</DialogDescription>
-        </DialogHeader>
+        </DialogHeader>{" "}
         <DialogFooter className="pt-2">
-          <Button onClick={handleCancel} variant="outline">
+          <Button
+            onClick={handleCancel}
+            variant="outline"
+            className="cursor-pointer"
+          >
             Cancel
           </Button>
-          <Button onClick={handleConfirm}>Confirm</Button>
+          <Button onClick={handleConfirm} className="cursor-pointer">
+            Confirm
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
