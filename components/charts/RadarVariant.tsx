@@ -12,9 +12,10 @@ type Props = {
     name: string;
     value: number;
   }[];
+  currency?: string;
 };
 
-export const RadarVariant = ({ data = [] }: Props) => {
+export const RadarVariant = ({ data = [], currency = "EUR" }: Props) => {
   return (
     <ResponsiveContainer width="100%" height={300}>
       <RadarChart cx="50%" cy="50%" outerRadius="60%" data={data}>

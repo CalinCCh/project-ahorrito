@@ -1,0 +1,19 @@
+Table "user_subscriptions" {
+  "id" text [pk, not null]
+  "user_id" text [not null]
+  "stripe_customer_id" text
+  "stripe_subscription_id" text
+  "stripe_price_id" text
+  "plan" text [not null]
+  "status" text [not null, default: 'inactive']
+  "current_period_start" timestamp
+  "current_period_end" timestamp
+  "cancel_at_period_end" text [not null, default: 'false']
+  "created_at" timestamp [default: `now()`]
+  "updated_at" timestamp [default: `now()`]
+
+  Indexes {
+    user_id [unique, name: "user_subscriptions_user_id_unique"]
+    stripe_subscription_id [unique, name: "user_subscriptions_stripe_subscription_id_unique"]
+  }
+}

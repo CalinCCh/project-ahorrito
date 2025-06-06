@@ -1,3 +1,6 @@
+"use client";
+
+// filepath: d:\react\project-ahorrito\app\(dashboard)\transactions\import-card.tsx
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";

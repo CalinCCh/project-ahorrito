@@ -23,24 +23,15 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+import { cn } from "@/lib/utils";
 import { useConfirm } from "@/hooks/use-confirm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Loader2,
-  RefreshCw,
-  Trash,
-} from "lucide-react";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { ChevronLeft, ChevronRight, Trash } from "lucide-react";
 import { toast } from "sonner";
+import { Card, CardContent } from "@/components/ui/card";
 
-interface DataTableProps<TData, TValue> {
+export interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   filterKey: string;
@@ -57,6 +48,7 @@ interface DataTableProps<TData, TValue> {
   } | null;
   hasLinkedBankAccount?: boolean;
   isAllAccountsView?: boolean;
+  isUnifiedContainer?: boolean;
 }
 
 export function DataTable<TData, TValue>({
@@ -73,6 +65,7 @@ export function DataTable<TData, TValue>({
   syncProgress = null,
   hasLinkedBankAccount = false,
   isAllAccountsView = false,
+  isUnifiedContainer = false,
 }: DataTableProps<TData, TValue>) {
   const [ConfirmDialog, confirm] = useConfirm(
     "Are you sure?",
@@ -89,7 +82,6 @@ export function DataTable<TData, TValue>({
         ]
       : []
   );
-  const [localSyncing, setLocalSyncing] = React.useState(false);
 
   const [rowSelection, setRowSelection] = React.useState({});
 
@@ -109,30 +101,6 @@ export function DataTable<TData, TValue>({
     }
   }, [initialFilterValue, filterKey]);
 
-  // Default sync handler if none provided
-  const handleSync = async () => {
-    if (onSync) {
-      return onSync();
-    }
-
-    // Si no hay onSync pero hay cuentas vinculadas, mostramos un toast
-    if (hasLinkedBankAccount || isAllAccountsView) {
-      setLocalSyncing(true);
-      toast.info("Iniciando sincronización de transacciones...");
-
-      // Simulación básica
-      setTimeout(() => {
-        setLocalSyncing(false);
-        toast.success("Transacciones sincronizadas correctamente");
-      }, 2000);
-    } else {
-      toast.error("No hay cuentas bancarias vinculadas para sincronizar");
-    }
-  };
-
-  const canSync = hasLinkedBankAccount || isAllAccountsView;
-  const isCurrentlySyncing = isSyncing || localSyncing;
-
   const table = useReactTable({
     data,
     columns,
@@ -151,19 +119,19 @@ export function DataTable<TData, TValue>({
     },
     initialState: {
       pagination: {
-        pageSize: 11,
+        pageSize: 8, // Changed to 8 rows to avoid scroll within datatable
       },
     },
   });
 
-  const ROW_HEIGHT = 52; // Altura reducida para permitir más filas
-  const HEADER_HEIGHT = 48; // Altura del header
-  const PAGINATION_HEIGHT = 65; // Altura aproximada de la sección de paginación
-  const FILTER_AREA_HEIGHT = 70; // Altura aproximada del área de filtros
+  const ROW_HEIGHT = 36; // Altura más compacta para evitar expansión de filas
+  const HEADER_HEIGHT = 44; // Altura del header reducida
+  const PAGINATION_HEIGHT = 60; // Altura aproximada de la sección de paginación reducida
+  const FILTER_AREA_HEIGHT = 65; // Altura aproximada del área de filtros reducida
   const visibleRows = table.getRowModel().rows;
 
   // Calculamos cuántas filas caben exactamente en el espacio disponible
-  const totalRows = 11; // Aumentamos a 11 filas en total
+  const totalRows = 10; // Incrementado a 10 filas para mejor aprovechamiento del espacio
   const emptyRowsCount = Math.max(0, totalRows - visibleRows.length);
 
   // Format last synced date
@@ -196,20 +164,29 @@ export function DataTable<TData, TValue>({
     });
   };
 
-  return (
-    <div className="flex flex-col h-full">
+  const tableContent = (
+    <>
       <ConfirmDialog />
-      <div className="flex items-center justify-between py-2.5 min-h-[60px]">
-        <div className="flex items-center flex-grow">
+      {/* No renderizar la fila de filtro si es un contenedor unificado, ya que el header lo maneja */}
+      {!isUnifiedContainer && (
+        <div className="flex items-center justify-between py-4 px-4">
+          <Input
+            placeholder={`Filter by ${filterKey}...`}
+            value={
+              (table.getColumn(filterKey)?.getFilterValue() as string) ?? ""
+            }
+            onChange={(event) =>
+              table.getColumn(filterKey)?.setFilterValue(event.target.value)
+            }
+            className="max-w-sm h-10 text-sm bg-slate-50 border-slate-200 rounded-lg transition-all duration-200 focus:bg-white focus:border-blue-300 ring-1 ring-transparent focus:ring-blue-100"
+          />
           {table.getFilteredSelectedRowModel().rows.length > 0 && (
             <Button
               disabled={disabled}
               size="sm"
-              variant="destructive"
-              className="font-normal text-xs mr-4 rounded-full px-4 py-2 shadow-sm transition-all duration-200 ease-in-out"
+              variant="outline"
+              className="text-xs font-normal h-10 cursor-pointer"
               onClick={async () => {
-                if (table.getFilteredSelectedRowModel().rows.length === 0)
-                  return;
                 const ok = await confirm();
                 if (ok) {
                   onDelete(table.getFilteredSelectedRowModel().rows);
@@ -217,48 +194,64 @@ export function DataTable<TData, TValue>({
                 }
               }}
             >
-              <Trash className="size-3.5 mr-2" />
+              <Trash className="size-4 mr-2" />
               Delete ({table.getFilteredSelectedRowModel().rows.length})
             </Button>
           )}
-          <div className="flex-grow max-w-sm">
-            {initialFilterValue === undefined && (
-              <Input
-                placeholder={`Filter ${filterKey}...`}
-                value={
-                  (table.getColumn(filterKey)?.getFilterValue() as string) ?? ""
-                }
-                onChange={(event) =>
-                  table.getColumn(filterKey)?.setFilterValue(event.target.value)
-                }
-                className="w-full bg-slate-50/80 border border-slate-200 text-slate-900 placeholder:text-slate-400 rounded-xl shadow-sm transition-all duration-200 focus-visible:ring-slate-300 focus-visible:border-slate-400 hover:border-slate-300 h-11"
-              />
-            )}
-            {initialFilterValue !== undefined && <div className="h-11" />}
-          </div>
         </div>
-      </div>
-      <div className="rounded-xl overflow-hidden border border-slate-200/80 bg-white/90 flex-grow flex flex-col shadow-sm backdrop-blur-sm">
-        <Table className="h-full table-fixed w-full">
+      )}{" "}
+      <div // Wrapper for <Table>
+        className={cn(
+          isUnifiedContainer
+            ? "flex-1 min-h-0 overflow-hidden bg-white border-t border-slate-200 scrollbar-hide"
+            : "border rounded-lg overflow-hidden flex-1 scrollbar-hide"
+        )}
+        role="region"
+        aria-label="Data table"
+        tabIndex={isUnifiedContainer ? 0 : undefined}
+      >
+        <Table className="table-fixed w-full">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow
-                key={headerGroup.id}
-                className="bg-slate-50/90 border-b border-slate-200/80"
-              >
+              <TableRow key={headerGroup.id} className="h-12">
                 {headerGroup.headers.map((header) => {
+                  // Define fixed widths for each column
+                  const getColumnWidth = (columnId: string) => {
+                    switch (columnId) {
+                      case "select":
+                        return "w-12"; // 48px for checkbox
+                      case "date":
+                        return "w-32"; // 128px for date
+                      case "category":
+                        return "w-48"; // 192px for category
+                      case "payee":
+                        return "w-56"; // 224px for payee
+                      case "account":
+                        return "w-40"; // 160px for account
+                      case "amount":
+                        return "w-28"; // 112px for amount
+                      case "actions":
+                        return "w-16"; // 64px for actions
+                      default:
+                        return "w-32"; // Default width
+                    }
+                  };
+
                   return (
                     <TableHead
                       key={header.id}
-                      className="text-slate-700 font-medium px-4 h-11"
-                      style={{ width: header.getSize() }}
+                      className={`bg-slate-50 h-12 ${getColumnWidth(
+                        header.column.id
+                      )} px-2`}
                     >
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
+                      <div className="truncate">
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                      </div>
                     </TableHead>
                   );
                 })}
@@ -266,154 +259,177 @@ export function DataTable<TData, TValue>({
             ))}
           </TableHeader>
           <TableBody>
-            {visibleRows.length ? (
-              <>
-                {visibleRows.map((row) => (
-                  <TableRow
-                    key={row.id}
-                    data-state={row.getIsSelected() && "selected"}
-                    className="transition-colors duration-200 hover:bg-slate-50/90 data-[state=selected]:bg-slate-100/80 border-b border-slate-100/90"
-                  >
-                    {row.getVisibleCells().map((cell) => (
+            {table.getRowModel().rows?.length ? (
+              table.getRowModel().rows.map((row) => (
+                <TableRow
+                  key={row.id}
+                  data-state={row.getIsSelected() && "selected"}
+                  className="h-9" // Further reduced from h-10
+                >
+                  {row.getVisibleCells().map((cell) => {
+                    // Apply same width logic as headers
+                    const getColumnWidth = (columnId: string) => {
+                      switch (columnId) {
+                        case "select":
+                          return "w-12";
+                        case "date":
+                          return "w-32";
+                        case "category":
+                          return "w-48";
+                        case "payee":
+                          return "w-56";
+                        case "account":
+                          return "w-40";
+                        case "amount":
+                          return "w-28";
+                        case "actions":
+                          return "w-16";
+                        default:
+                          return "w-32";
+                      }
+                    };
+
+                    return (
                       <TableCell
                         key={cell.id}
-                        className="px-4 py-2 text-sm text-slate-700"
-                        style={{ width: cell.column.getSize() }}
+                        className={`h-9 ${getColumnWidth(
+                          // Further reduced from h-10
+                          cell.column.id
+                        )} px-2 align-middle`}
                       >
-                        {flexRender(
-                          cell.column.columnDef.cell,
-                          cell.getContext()
-                        )}
+                        <div className="truncate">
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext()
+                          )}
+                        </div>
                       </TableCell>
-                    ))}
-                  </TableRow>
-                ))}
-                {/* Render empty rows to fill the table */}
-                {Array.from({ length: emptyRowsCount }).map((_, idx) => (
-                  <TableRow
-                    key={`empty-${idx}`}
-                    className="pointer-events-none border-b border-slate-100/60"
-                  >
-                    {table.getAllColumns().map((column) => (
-                      <TableCell
-                        key={column.id}
-                        className="h-[52px] bg-transparent"
-                        style={{ width: column.getSize() }}
-                      />
-                    ))}
-                  </TableRow>
-                ))}
-              </>
+                    );
+                  })}
+                </TableRow>
+              ))
             ) : (
-              <TableRow>
+              <TableRow className="h-9">
+                {" "}
+                // Further reduced from h-10
                 <TableCell
                   colSpan={columns.length}
-                  className="h-[500px] text-center text-slate-400 font-light text-base"
+                  className="h-9 text-center align-middle" // Further reduced from h-10
                 >
                   No results.
                 </TableCell>
               </TableRow>
             )}
+            {/* Render empty rows to fill space if needed, with fixed height */}
+            {!isUnifiedContainer &&
+              emptyRowsCount > 0 &&
+              Array.from({ length: emptyRowsCount }).map((_, index) => (
+                <TableRow
+                  key={`empty-${index}`}
+                  className="h-9" // Further reduced from h-10
+                >
+                  {columns.map((column, colIndex) => {
+                    // Apply same width logic for empty rows
+                    const getColumnWidth = (columnIndex: number) => {
+                      const columnIds = [
+                        "select",
+                        "date",
+                        "category",
+                        "payee",
+                        "account",
+                        "amount",
+                        "actions",
+                      ];
+                      const columnId = columnIds[columnIndex] || "default";
+                      switch (columnId) {
+                        case "select":
+                          return "w-12";
+                        case "date":
+                          return "w-32";
+                        case "category":
+                          return "w-48";
+                        case "payee":
+                          return "w-56";
+                        case "account":
+                          return "w-40";
+                        case "amount":
+                          return "w-28";
+                        case "actions":
+                          return "w-16";
+                        default:
+                          return "w-32";
+                      }
+                    };
+
+                    return (
+                      <TableCell
+                        key={`empty-${index}-cell-${colIndex}`}
+                        className={`h-9 ${getColumnWidth(
+                          // Further reduced from h-10
+                          colIndex
+                        )} px-2 align-middle`}
+                      >
+                        &nbsp;
+                      </TableCell>
+                    );
+                  })}
+                </TableRow>
+              ))}
           </TableBody>
         </Table>
-        <div className="flex items-center justify-between px-4 py-3 bg-slate-50/90 border-t border-slate-200/80">
-          <div className="flex items-center">
-            <div className="text-sm text-slate-500 mr-4">
-              {table.getFilteredSelectedRowModel().rows.length} of{" "}
-              {table.getFilteredRowModel().rows.length} row(s) selected.
-            </div>
-            <div className="flex items-center space-x-2">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    onClick={handleSync}
-                    disabled={
-                      isCurrentlySyncing || disabled || (!canSync && !onSync)
-                    }
-                    variant="outline"
-                    size="sm"
-                    className="rounded-lg border-slate-200 hover:bg-slate-50/90 hover:border-slate-300 h-9 px-3.5 transition-all duration-200 flex items-center"
-                  >
-                    {isCurrentlySyncing ? (
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    ) : (
-                      <RefreshCw className="w-4 h-4 mr-2" />
-                    )}
-                    Sync Transactions
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-[240px] text-xs">
-                  {!canSync && !onSync ? (
-                    "No hay cuentas bancarias vinculadas para sincronizar"
-                  ) : syncStatus ? (
-                    <div className="font-medium">{syncStatus}</div>
-                  ) : lastSynced ? (
-                    <>
-                      Last synced: {formatLastSynced(lastSynced)}
-                      <div className="text-xs text-slate-400 mt-1">
-                        Recent transactions may take up to 48 hours to appear
-                      </div>
-                    </>
-                  ) : (
-                    "Synchronize transactions with your bank"
-                  )}
-                  {syncProgress && (
-                    <div className="mt-2">
-                      <div className="flex justify-between items-center mb-1">
-                        <div className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                          Syncing Data
-                        </div>
-                        <div className="text-xs font-mono text-blue-600 dark:text-blue-400 tabular-nums">
-                          {syncProgress.current} / {syncProgress.total}
-                        </div>
-                      </div>
-                      <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-gradient-to-r from-blue-500 to-blue-400 rounded-full transition-all duration-300 ease-out"
-                          style={{
-                            width: `${
-                              syncProgress.total
-                                ? Math.min(
-                                    100,
-                                    Math.round(
-                                      (syncProgress.current /
-                                        syncProgress.total) *
-                                        100
-                                    )
-                                  )
-                                : 0
-                            }%`,
-                          }}
-                        />
-                      </div>
-                    </div>
-                  )}
-                </TooltipContent>
-              </Tooltip>
-            </div>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
-              className="rounded-lg border-slate-200 hover:bg-slate-50/90 hover:border-slate-300 h-9 px-3.5 transition-all duration-200"
-            >
-              <ChevronLeft className="size-4 mr-1" /> Previous
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
-              className="rounded-lg border-slate-200 hover:bg-slate-50/90 hover:border-slate-300 h-9 px-3.5 transition-all duration-200"
-            >
-              Next <ChevronRight className="size-4 ml-1" />
-            </Button>
-          </div>
+      </div>{" "}
+      <div // Pagination Footer
+        className={cn(
+          "flex items-center justify-between px-6 py-3 bg-gradient-to-r from-blue-50/60 via-indigo-50/40 to-purple-50/50 border-t border-blue-200/50 backdrop-blur-sm flex-shrink-0",
+          !isUnifiedContainer && "rounded-b-lg",
+          isUnifiedContainer && ""
+        )}
+      >
+        {" "}
+        <div className="text-sm text-blue-700 font-medium pl-9">
+          {table.getFilteredSelectedRowModel().rows.length} of{" "}
+          {table.getFilteredRowModel().rows.length} row(s) selected.
+        </div>
+        <div className="flex items-center gap-1.5">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.previousPage()}
+            disabled={!table.getCanPreviousPage()}
+            className="h-9 px-3 cursor-pointer bg-white/80 border-blue-200 hover:bg-blue-50 hover:border-blue-300 text-blue-700 backdrop-blur-sm"
+          >
+            <ChevronLeft className="size-4 mr-1" />
+            Previous
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.nextPage()}
+            disabled={!table.getCanNextPage()}
+            className="h-9 px-3 cursor-pointer bg-white/80 border-blue-200 hover:bg-blue-50 hover:border-blue-300 text-blue-700 backdrop-blur-sm"
+          >
+            Next
+            <ChevronRight className="size-4 ml-1" />
+          </Button>
         </div>
       </div>
-    </div>
+    </>
+  );
+
+  if (isUnifiedContainer) {
+    return (
+      <div className="flex flex-col h-full max-h-full overflow-hidden scrollbar-hide">
+        {tableContent}
+      </div>
+    );
+  }
+
+  // Fallback for non-unified (original structure)
+  return (
+    <Card className="border-none drop-shadow-sm h-full max-h-full flex flex-col overflow-hidden scrollbar-hide">
+      <CardContent className="p-0 flex-1 flex flex-col min-h-0 overflow-hidden scrollbar-hide">
+        {tableContent}
+      </CardContent>
+    </Card>
   );
 }

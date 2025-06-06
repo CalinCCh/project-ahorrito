@@ -14,7 +14,7 @@ export async function fetchGeminiText(prompt: string) {
         throw new Error("Error parsing Gemini response");
     }
     if (!res.ok) {
-        throw new Error(data?.error || "Error llamando a Gemini");
+        throw new Error(data?.error || "Error calling Gemini");
     }
     return data.text;
 } 

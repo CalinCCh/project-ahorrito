@@ -15,17 +15,18 @@ type Props = {
     income: number;
     expenses: number;
   }[];
+  currency?: string;
 };
 
-export const AreaVariant = ({ data }: Props) => {
+export const AreaVariant = ({ data, currency = "EUR" }: Props) => {
   return (
     <ResponsiveContainer width="100%" height={350}>
       <AreaChart data={data}>
-        <CartesianGrid strokeDasharray="3 3" />
+        <CartesianGrid strokeDasharray="3 3" />{" "}
         <defs>
           <linearGradient id="income" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="2%" stopColor="#3d82bf6" stopOpacity={0.8} />
-            <stop offset="98%" stopColor="#3d82bf6" stopOpacity={0} />
+            <stop offset="2%" stopColor="#3d82f6" stopOpacity={0.8} />
+            <stop offset="98%" stopColor="#3d82f6" stopOpacity={0} />
           </linearGradient>
           <linearGradient id="expenses" x1="0" y1="0" x2="0" y2="1">
             <stop offset="2%" stopColor="#f43f5e" stopOpacity={0.8} />
@@ -40,7 +41,7 @@ export const AreaVariant = ({ data }: Props) => {
           style={{ fontSize: "12px" }}
           tickMargin={16}
         />
-        <Tooltip content={<CustomTooltip />}/>
+        <Tooltip content={<CustomTooltip currency={currency} />} />
         <Area
           type="monotone"
           dataKey="income"
@@ -49,14 +50,14 @@ export const AreaVariant = ({ data }: Props) => {
           stroke="#3d82f6"
           fill="url(#income)"
           className="drop-shadow-sm"
-        />
+        />{" "}
         <Area
           type="monotone"
           dataKey="expenses"
           stackId="expenses"
           strokeWidth={2}
           stroke="#f43f5e"
-          fill="url(#income)"
+          fill="url(#expenses)"
           className="drop-shadow-sm"
         />
       </AreaChart>

@@ -56,10 +56,10 @@ export const AccountFilter = () => {
           type="button"
           disabled={isLoadingAccounts || isLoadingSummary}
           variant="outline"
-          className="lg:w-auto w-full h-10 rounded-lg px-3 font-medium flex items-center gap-2 bg-white border border-slate-200 shadow-sm transition-all duration-200 hover:bg-slate-50 hover:shadow-md focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-2 outline-none"
+          className="h-11 px-4 text-sm flex items-center gap-2 bg-gradient-to-r from-slate-50/90 to-gray-50/90 backdrop-blur-sm border border-slate-200 rounded-lg hover:from-slate-100 hover:to-gray-100 hover:border-slate-300 shadow-sm transition-all duration-200 cursor-pointer group min-w-[140px]"
         >
-          <UserCircle2 className="size-4 text-blue-500" />
-          <span className="truncate max-w-[120px] md:max-w-[180px] text-foreground">
+          <UserCircle2 className="size-4 text-slate-600 group-hover:text-slate-700 transition-colors duration-200" />
+          <span className="truncate max-w-[90px] text-slate-700 group-hover:text-slate-800 font-medium transition-colors duration-200">
             {(() => {
               if (accountId === "all" || !accountId) return "All accounts";
               if (accounts?.length) {
@@ -72,41 +72,44 @@ export const AccountFilter = () => {
                   );
                 }
               }
-              return "Select account";
+              return "Account";
             })()}
           </span>
-          <ChevronDown className="ml-2 size-4 opacity-50" />
+          <ChevronDown className="size-3 text-slate-500 group-hover:text-slate-700 transition-colors duration-200" />
         </Button>
       </PopoverTrigger>
       <PopoverContent
-        className="p-1 w-[200px] bg-white border shadow-md rounded-md"
+        className="p-1 w-[200px] bg-white/95 backdrop-blur-sm border border-slate-200 shadow-lg rounded-lg overflow-hidden"
         align="start"
         sideOffset={5}
       >
-        <div
-          onClick={() => handleSelect("all")}
-          className="px-3 py-2 text-sm text-gray-900 hover:bg-slate-100 cursor-pointer rounded-sm"
-        >
-          All accounts
-        </div>
+        {/* Solo mostrar "All accounts" si hay más de una cuenta */}
+        {accounts && accounts.length > 1 && (
+          <div
+            onClick={() => handleSelect("all")}
+            className="px-3 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-slate-800 cursor-pointer rounded-lg mx-1 transition-all duration-200 font-medium"
+          >
+            All accounts
+          </div>
+        )}
         {accounts &&
           accounts.length > 0 &&
           accounts.map((item) => (
             <div
               key={item.account.id}
               onClick={() => handleSelect(item.account.id)}
-              className="px-3 py-2 text-sm text-gray-900 hover:bg-slate-100 cursor-pointer rounded-sm"
+              className="px-3 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-slate-800 cursor-pointer rounded-lg mx-1 transition-all duration-200 font-medium"
             >
               {item.account.name || item.account.id}
             </div>
           ))}
         {isLoadingAccounts && (
-          <div className="px-3 py-2 text-sm text-gray-600">
+          <div className="px-3 py-2.5 text-sm text-slate-500 font-medium">
             Loading accounts...
           </div>
         )}
         {!isLoadingAccounts && !accounts?.length && (
-          <div className="px-3 py-2 text-sm text-gray-600">
+          <div className="px-3 py-2.5 text-sm text-slate-500 font-medium">
             No accounts available.
           </div>
         )}

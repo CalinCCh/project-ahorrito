@@ -27,7 +27,7 @@ export const useCreateAccount = () => {
             }
             console.log('[CREATE ACCOUNT] Respuesta:', data, 'Status:', response.status);
             if (!response.ok) {
-                throw new Error(data?.error || 'Unknown error');
+                throw new Error('error' in data ? data.error : 'Unknown error');
             }
             return data;
         },
@@ -41,8 +41,8 @@ export const useCreateAccount = () => {
             // Opcional: Actualizar el caché directamente para mostrar la nueva cuenta de inmediato
             try {
                 const previousAccounts = queryClient.getQueryData<any[]>(["accounts"]) || [];
-                if (Array.isArray(previousAccounts)) {
-                    queryClient.setQueryData(["accounts"], [...previousAccounts, data.account]);
+                if (Array.isArray(previousAccounts) && 'data' in data) {
+                    queryClient.setQueryData(["accounts"], [...previousAccounts, data.data]);
                 }
             } catch (e) {
                 console.error('Error actualizando el caché:', e);
@@ -50,7 +50,7 @@ export const useCreateAccount = () => {
 
             // Disparar un evento personalizado para que otros componentes puedan reaccionar
             window.dispatchEvent(new CustomEvent("account-created", {
-                detail: { accountId: data.account?.id }
+                detail: { accountId: 'data' in data ? data.data?.id : undefined }
             }));
         },
         onError: (error) => {

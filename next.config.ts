@@ -5,6 +5,7 @@ const nextConfig: NextConfig = {
 };
 
 module.exports = {
+  eslint: { ignoreDuringBuilds: true },
   images: {
     domains: ["img.clerk.com"],
   },

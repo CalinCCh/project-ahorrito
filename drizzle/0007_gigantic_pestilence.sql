@@ -1,0 +1,1 @@
+ALTER TABLE "predefined_categories" ADD COLUMN "icon" text;

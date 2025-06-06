@@ -4,29 +4,39 @@ import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
+import { motion } from "framer-motion";
 
 import { useGetTransactions } from "@/features/transactions/api/use-get-transactions";
 import { useBulkDeleteTransactions } from "@/features/transactions/api/use-bulk-delete-transactions";
 import { useBulkCreateTransactions } from "@/features/transactions/api/use-bulk-create-transactions";
 import { useGetTotalTransactions } from "@/features/transactions/api/use-get-total-transactions";
 import { useGetAccounts } from "@/features/accounts/api/use-get-accounts";
-import { useAccounts } from "@/features/accounts/hooks/use-accounts";
 import { useSelectAccount } from "@/features/accounts/hooks/use-select-account";
+import { useUnifiedSync } from "@/features/sync/hooks/use-unified-sync";
 import { useNewTransaction } from "@/features/transactions/hooks/use-new-transaction";
 
-import { PageHeader } from "@/components/data-display/PageHeader";
 import { DataTable } from "@/components/data-display/DataTable";
+import { UnifiedTransactionsView } from "@/components/data-display/UnifiedTransactionsView";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Loader2, Plus } from "lucide-react";
+import {
+  Loader2,
+  Plus,
+  Receipt,
+  TrendingUp,
+  ArrowUpDown,
+  Search,
+  Filter,
+} from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UploadButton } from "./upload-button";
 import { ImportCard } from "./import-card";
 import { AccountFilter } from "@/components/filters/AccountFilter";
 import { DateFilter } from "@/components/filters/DateFilter";
+import { Row } from "@tanstack/react-table";
 
-import { columns } from "./columns";
+import { getColumns, ResponseType } from "./columns";
 
 const INITIAL_IMPORT_RESULTS = {
   data: [],
@@ -40,16 +50,18 @@ enum VARIANTS {
 }
 
 function getTransactionsDescription(count: number) {
-  return `You have a total of ${count} transaction${
-    count !== 1 ? "s" : ""
-  } recorded.`;
+  if (count === 0) {
+    return "No transactions available. Connect a bank account or add transactions manually.";
+  }
+  return `Manage and track all your financial transactions (${count.toLocaleString(
+    "en-US"
+  )} records)`;
 }
 
 export default function TransactionsPage() {
   const [variant, setVariant] = useState<VARIANTS>(VARIANTS.LIST);
   const [importResults, setImportResults] = useState(INITIAL_IMPORT_RESULTS);
   const [filterValue, setFilterValue] = useState("");
-  const [isSyncing, setIsSyncing] = useState(false);
   const [AccountDialog, confirm] = useSelectAccount();
 
   const transactionsQuery = useGetTransactions();
@@ -57,7 +69,7 @@ export default function TransactionsPage() {
   const deleteTransactions = useBulkDeleteTransactions();
   const createTransactions = useBulkCreateTransactions();
   const { data: accounts = [] } = useGetAccounts();
-  const { refreshAccount } = useAccounts();
+  const { isSyncing, syncSingleAccount } = useUnifiedSync();
   const newTransaction = useNewTransaction();
   const params = useSearchParams();
   const queryClient = useQueryClient();
@@ -116,39 +128,66 @@ export default function TransactionsPage() {
   }
 
   async function handleSync() {
-    setIsSyncing(true);
     try {
       if (isAllAccountsView) {
         const plaidAccounts = accounts.filter((a) => !!a.account.plaidId);
         if (plaidAccounts.length === 0) {
-          setIsSyncing(false);
+          toast.info("No linked bank accounts found to sync");
           return;
         }
-        await Promise.all(
-          plaidAccounts.map((a) => refreshAccount(a.account.plaidId!))
-        );
-      } else if (hasLinkedBankAccount) {
-        await refreshAccount(selectedAccount.account.plaidId!);
+
+        // Sync accounts one by one instead of all at once
+        for (const account of plaidAccounts) {
+          await syncSingleAccount({
+            id: account.account.id,
+            plaidId: account.account.plaidId || undefined,
+          });
+        }
+      } else if (hasLinkedBankAccount && selectedAccount?.account?.plaidId) {
+        await syncSingleAccount({
+          id: selectedAccount.account.id,
+          plaidId: selectedAccount.account.plaidId,
+        });
       }
-      queryClient.invalidateQueries({ queryKey: ["transactions"] });
-      queryClient.invalidateQueries({ queryKey: ["accounts"] });
-      queryClient.invalidateQueries({ queryKey: ["summary"] });
-    } catch {
-      // Silenciar errores
-    } finally {
-      setIsSyncing(false);
+    } catch (error) {
+      // Error handling is done within the unified sync hook
+      console.error("Sync error:", error);
     }
   }
 
   if (transactionsQuery.isLoading) {
     return (
-      <Card className="border-none drop-shadow-sm">
-        <CardContent>
-          <div className="h-[500px] w-full flex items-center justify-center">
-            <Loader2 className="size-6 text-slate-300 animate-spin" />
-          </div>
-        </CardContent>
-      </Card>
+      <div className="relative min-h-screen mobile-no-scroll">
+        {/* Enhanced Background - Mobile Optimized */}
+        <div className="fixed inset-0 -z-10">
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-blue-50/50 to-indigo-100/30" />
+          <div className="absolute inset-0 bg-gradient-to-tl from-purple-50/40 via-transparent to-cyan-50/30" />
+
+          {/* Floating orbs - Responsive */}
+          <div className="absolute top-10 sm:top-20 left-4 sm:left-10 w-16 sm:w-32 h-16 sm:h-32 bg-gradient-to-br from-blue-400/15 to-cyan-400/15 rounded-full blur-2xl animate-pulse" />
+          <div className="absolute bottom-20 sm:bottom-40 right-4 sm:right-20 w-14 sm:w-28 h-14 sm:h-28 bg-gradient-to-br from-purple-400/15 to-pink-400/15 rounded-full blur-2xl animate-pulse delay-1000" />
+        </div>
+
+        <div className="relative z-10 flex items-center justify-center min-h-screen px-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white/80 backdrop-blur-xl border border-white/20 rounded-2xl sm:rounded-3xl shadow-lg shadow-black/5 p-6 sm:p-12 text-center w-full max-w-sm"
+          >
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+              className="mb-4 sm:mb-6"
+            >
+              <Loader2 className="w-12 sm:w-16 h-12 sm:h-16 text-blue-500 mx-auto" />
+            </motion.div>
+            <h3 className="text-lg sm:text-xl font-semibold text-slate-800 mb-2">
+              Loading Transactions
+            </h3>
+            <p className="text-sm sm:text-base text-slate-600">Fetching your financial data...</p>
+          </motion.div>
+        </div>
+      </div>
     );
   }
 
@@ -171,55 +210,52 @@ export default function TransactionsPage() {
       : transactions.length;
 
   return (
-    <>
-      <PageHeader
-        title="Transactions History"
-        description={getTransactionsDescription(totalCount)}
-        filterArea={
-          <div className="flex gap-4 items-center">
-            <Input
-              placeholder="Filter payee..."
-              value={filterValue}
-              onChange={(e) => setFilterValue(e.target.value)}
-              className="w-full sm:w-72 md:w-80 lg:w-96 h-10 bg-slate-50/80 border border-slate-200 text-slate-900 placeholder:text-slate-500 rounded-lg shadow-sm transition-all duration-200 focus-visible:ring-slate-300 focus-visible:border-slate-400 hover:border-slate-300"
-            />
-            <AccountFilter />
-            <DateFilter />
-          </div>
-        }
-        actions={
-          <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
-            <Button
-              onClick={newTransaction.onOpen}
-              className="w-full sm:w-auto cursor-pointer h-10"
-            >
-              <Plus className="size-4 mr-2" />
-              Add new
-            </Button>
-            <UploadButton onUpload={handleUpload} />
-          </div>
-        }
-        className="mb-6"
-      />
-      <div className="-mt-6">
-        <div className="h-[770px] min-h-[770px] flex flex-col">
-          <DataTable
-            filterKey="payee"
-            columns={columns}
-            data={transactions}
-            onDelete={(row) => {
-              const ids = row.map((r) => r.original.id);
-              deleteTransactions.mutate({ ids });
-            }}
-            disabled={isDisabled}
-            initialFilterValue={filterValue}
-            hasLinkedBankAccount={hasLinkedBankAccount}
-            isAllAccountsView={isAllAccountsView}
-            onSync={handleSync}
-            isSyncing={isSyncing}
-          />
+    <div className="relative h-screen overflow-hidden transactions-no-scroll no-scroll-page mobile-no-scroll">
+      {/* Enhanced Background - Mobile Optimized */}
+      <div className="fixed inset-0 -z-10">
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-blue-50/50 to-indigo-100/30" />
+        <div className="absolute inset-0 bg-gradient-to-tl from-purple-50/40 via-transparent to-cyan-50/30" />
+
+        {/* Floating orbs - Responsive */}
+        <div className="absolute top-10 sm:top-20 left-2 sm:left-10 w-16 sm:w-32 h-16 sm:h-32 bg-gradient-to-br from-blue-400/15 to-cyan-400/15 rounded-full blur-2xl animate-pulse" />
+        <div className="absolute bottom-20 sm:bottom-40 right-2 sm:right-20 w-14 sm:w-28 h-14 sm:h-28 bg-gradient-to-br from-purple-400/15 to-pink-400/15 rounded-full blur-2xl animate-pulse delay-1000" />
+        <div className="absolute top-1/2 right-1/4 w-12 sm:w-24 h-12 sm:h-24 bg-gradient-to-br from-emerald-400/15 to-teal-400/15 rounded-full blur-2xl animate-pulse delay-2000" />
+      </div>
+
+      {/* Contenedor IGUAL QUE SAVINGS */}
+      <div className="relative z-10 h-full flex flex-col">
+        <div className="container mx-auto px-4 lg:px-6 py-1 sm:py-2 h-full flex flex-col pt-20 lg:pt-2">
+          {/* Integrated Header with DataTable - Mobile Optimized */}
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="flex-1 flex flex-col min-h-0"
+          >
+            <UnifiedTransactionsView
+                title="Transactions"
+                description={getTransactionsDescription(totalCount)}
+                totalCount={totalCount}
+                filterValue={filterValue}
+                onFilterChange={setFilterValue}
+                onAddNew={newTransaction.onOpen}
+                onUpload={handleUpload}
+                onSync={handleSync}
+                isSyncing={isSyncing}
+                UploadButtonComponent={UploadButton}
+                columns={getColumns(hasLinkedBankAccount, isAllAccountsView)}
+                data={transactions}
+                onDelete={(row: Row<ResponseType>[]) => {
+                  const ids = row.map((r) => r.original.id);
+                  deleteTransactions.mutate({ ids });
+                }}
+                disabled={isDisabled}
+                hasLinkedBankAccount={hasLinkedBankAccount}
+                isAllAccountsView={isAllAccountsView}
+              />
+          </motion.div>
         </div>
       </div>
-    </>
+    </div>
   );
 }

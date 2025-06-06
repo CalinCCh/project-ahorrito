@@ -1,3 +1,4 @@
+import React, { memo, useCallback } from "react";
 import { z } from "zod";
 import { Trash } from "lucide-react";
 import { useForm } from "react-hook-form";
@@ -33,25 +34,30 @@ type Props = {
   disabled?: boolean;
 };
 
-export const AccountForm = ({
+export const AccountForm = memo<Props>(function AccountForm({
   id,
   defaultValues,
   onSubmit,
   onDelete,
   disabled,
-}: Props) => {
+}) {
   const form = useForm<AccountFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: defaultValues,
   });
 
-  const handleSubmit = (values: AccountFormValues) => {
-    onSubmit(values);
-  };
+  // Memoize submit handler for performance
+  const handleSubmit = useCallback(
+    (values: AccountFormValues) => {
+      onSubmit(values);
+    },
+    [onSubmit]
+  );
 
-  const handleDelete = () => {
+  // Memoize delete handler
+  const handleDelete = useCallback(() => {
     onDelete?.();
-  };
+  }, [onDelete]);
 
   return (
     <Form {...form}>
@@ -117,4 +123,4 @@ export const AccountForm = ({
       </form>
     </Form>
   );
-};
+});

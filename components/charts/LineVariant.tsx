@@ -17,9 +17,10 @@ type Props = {
     income: number;
     expenses: number;
   }[];
+  currency?: string;
 };
 
-export const LineVariant = ({ data }: Props) => {
+export const LineVariant = ({ data, currency = "EUR" }: Props) => {
   return (
     <ResponsiveContainer width="100%" height={350}>
       <LineChart data={data}>
@@ -32,7 +33,7 @@ export const LineVariant = ({ data }: Props) => {
           style={{ fontSize: "12px" }}
           tickMargin={16}
         />
-        <Tooltip content={<CustomTooltip />} />
+        <Tooltip content={<CustomTooltip currency={currency} />} />
         <Line
           dot={false}
           dataKey="income"

@@ -61,7 +61,6 @@ export const DateFilter = () => {
 
     router.push(url);
   };
-
   const onReset = () => {
     setDate(undefined);
     pushToUrl(undefined);
@@ -73,16 +72,23 @@ export const DateFilter = () => {
         <Button
           disabled={false}
           variant="outline"
-          className="lg:w-auto w-full h-10 rounded-lg px-3 font-medium flex items-center gap-2 bg-white border border-slate-200 shadow-sm transition-all duration-200 hover:bg-slate-50 hover:shadow-md focus-visible:ring-2 focus-visible:ring-blue-200 focus-visible:ring-offset-2 outline-none"
+          className="h-11 px-4 text-sm flex items-center gap-2 bg-white/80 backdrop-blur-sm border border-blue-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 shadow-sm transition-all duration-200 min-w-[220px] max-w-[320px] cursor-pointer"
         >
-          <CalendarIcon className="size-4 text-blue-500" />
-          <span className="truncate max-w-[120px] md:max-w-[180px] text-foreground">
+          <CalendarIcon className="size-4 text-slate-600" />
+          <span className="truncate max-w-[180px] text-slate-700 font-medium">
             {formatDateRange(paramState)}
           </span>
-          <ChevronDown className="ml-2 size-4 opacity-50" />
+          <ChevronDown className="size-3 text-slate-500" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="lg:w-auto w-full p-0" align="start">
+      <PopoverContent
+        className="w-auto max-w-[95vw] p-0 bg-white/95 backdrop-blur-sm border border-blue-200 shadow-lg rounded-lg"
+        align="start"
+        side="bottom"
+        sideOffset={8}
+        avoidCollisions={true}
+        collisionPadding={16}
+      >
         <CalendarComponent
           disabled={false}
           initialFocus
@@ -97,10 +103,19 @@ export const DateFilter = () => {
             <Button
               onClick={() => pushToUrl(date)}
               disabled={!date?.from || !date?.to}
-              className="w-full"
-              variant="outline"
+              className="w-full cursor-pointer bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium"
+              variant="default"
             >
               Apply
+            </Button>
+          </PopoverClose>
+          <PopoverClose asChild>
+            <Button
+              onClick={onReset}
+              className="w-full cursor-pointer border-blue-200 text-slate-700 hover:bg-blue-50"
+              variant="outline"
+            >
+              Reset
             </Button>
           </PopoverClose>
         </div>

@@ -75,6 +75,13 @@ const app = new Hono()
                             ELSE NULL
                         END
                     `.as('categoryEmoji'),
+                    // Include the icon for predefined categories
+                    categoryIcon: sql`
+                        CASE
+                            WHEN ${predefinedCategories.icon} IS NOT NULL THEN ${predefinedCategories.icon}
+                            ELSE NULL
+                        END
+                    `.as('categoryIcon'),
                     // Store both types of category IDs
                     userCategoryId: transactions.userCategoryId,
                     predefinedCategoryId: transactions.predefinedCategoryId,
@@ -83,6 +90,15 @@ const app = new Hono()
                     notes: transactions.notes,
                     account: accounts.name,
                     accountId: transactions.accountId,
+                    // Include currency from the account's latest balance
+                    currency: sql`
+                        COALESCE(
+                            (SELECT currency FROM account_balances 
+                             WHERE account_id = ${transactions.accountId} 
+                             ORDER BY timestamp DESC LIMIT 1),
+                            'EUR'
+                        )
+                    `.as('currency'),
                 }).from(transactions)
                 .innerJoin(accounts, eq(transactions.accountId, accounts.id))
                 // Left join both category tables - only one will match for each transaction
@@ -126,6 +142,15 @@ const app = new Hono()
                     amount: transactions.amount,
                     notes: transactions.notes,
                     accountId: transactions.accountId,
+                    // Include currency from the account's latest balance
+                    currency: sql`
+                        COALESCE(
+                            (SELECT currency FROM account_balances 
+                             WHERE account_id = ${transactions.accountId} 
+                             ORDER BY timestamp DESC LIMIT 1),
+                            'EUR'
+                        )
+                    `.as('currency'),
                 })
                 .from(transactions)
                 .innerJoin(accounts, eq(transactions.accountId, accounts.id))
@@ -152,7 +177,6 @@ const app = new Hono()
             amount: z.number(),
             notes: z.string().optional(),
             accountId: z.string(),
-            // Make both category fields optional but validate they don't both have values
             userCategoryId: z.string().optional(),
             predefinedCategoryId: z.string().optional(),
         }).refine(data => !(data.userCategoryId && data.predefinedCategoryId), {
@@ -200,9 +224,6 @@ const app = new Hono()
                 return c.json({ error: "Unauthorized" }, 401);
             }
 
-            // *** Log Crítico ***
-            console.log("API /bulk-create: Valores recibidos para insertar:", JSON.stringify(values, null, 2));
-
             try {
                 const data = await db
                     .insert(transactions)
@@ -223,7 +244,7 @@ const app = new Hono()
             }
         })
     .post(
-        "/bulk-delete",
+        "/ -delete",
         clerkMiddleware(),
         zValidator("json", z.object({
             ids: z.array(z.string())
@@ -269,7 +290,6 @@ const app = new Hono()
             amount: z.number(),
             notes: z.string().optional(),
             accountId: z.string(),
-            // Make both category fields optional but validate they don't both have values
             userCategoryId: z.string().optional().nullable(),
             predefinedCategoryId: z.string().optional().nullable(),
         }).refine(data => !(data.userCategoryId && data.predefinedCategoryId), {

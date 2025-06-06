@@ -1,7 +1,6 @@
 "use client";
 
 // Este archivo es un proxy para mantener compatibilidad y evitar errores de importación
-import { toast, Toast, ToastProps } from "sonner";
+import { toast } from "sonner";
 
-export { toast, Toast };
-export type { ToastProps };
+export { toast };
