@@ -1,25 +1,18 @@
-// Configuración de URLs para diferentes entornos
+// Configuración simplificada de URLs para evitar problemas de SSR
 export const getApiUrl = () => {
-  // En desarrollo
-  if (process.env.NODE_ENV === 'development') {
-    return 'http://localhost:3000';
-  }
-  
-  // En producción, usar la URL actual de Vercel o la variable de entorno
-  return process.env.NEXT_PUBLIC_API_URL || 
-         'https://ahorrito-lki9s4pj7-calin-constantin-chirilas-projects.vercel.app';
+  // Siempre devolver la URL de producción actual
+  return 'https://ahorrito-p04sg1y0e-calin-constantin-chirilas-projects.vercel.app';
 };
 
 export const getBaseUrl = () => {
   return getApiUrl();
 };
 
-// Lista de todos los dominios permitidos para CORS
+// Lista simplificada de orígenes permitidos para CORS
 export const getAllowedOrigins = () => [
   'http://localhost:3000',
+  'https://ahorrito-p04sg1y0e-calin-constantin-chirilas-projects.vercel.app',
   'https://ahorrito-lki9s4pj7-calin-constantin-chirilas-projects.vercel.app',
-  'https://ahorrito-fdbsf9bog-calin-constantin-chirilas-projects.vercel.app', 
-  'https://project-ahorrito.vercel.app',
-  // Patrón wildcard para cualquier deployment de Vercel
+  'https://ahorrito-fdbsf9bog-calin-constantin-chirilas-projects.vercel.app',
   /https:\/\/ahorrito-.*\.vercel\.app$/
 ];
