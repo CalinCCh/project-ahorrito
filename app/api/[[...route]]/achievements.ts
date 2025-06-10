@@ -23,13 +23,13 @@ const app = new Hono()
     .use("*", clerkMiddleware());
 
 app.get("/", async (c) => {
-    const auth = getAuth(c);
-
-    if (!auth?.userId) {
-        return c.json({ error: "Unauthorized" }, 401);
-    }
-
     try {
+        const auth = getAuth(c);
+
+        if (!auth?.userId) {
+            return c.json({ error: "Unauthorized" }, 401);
+        }
+
         // Get all achievement definitions
         const definitions = await db
             .select()
