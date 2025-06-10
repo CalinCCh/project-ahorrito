@@ -1,4 +1,4 @@
 {
   "framework": "nextjs",
-  "buildCommand": "next build"
+  "buildCommand": "next build && echo 'module.exports = {};' > .next/server/app/\\(dashboard\\)/page_client-reference-manifest.js || true"
 }
