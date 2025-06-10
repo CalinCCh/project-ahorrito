@@ -9,12 +9,13 @@ import { RecentActivity } from "@/components/data-display/RecentActivity";
 import { SavingsGoalsSection } from "@/components/savings/SavingsGoalsSection";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import DebugClerk from "@/components/debug/clerk-debug";
-import { useState } from "react";
-import { redirect } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function HomePage() {
   const { user, isLoaded } = useUser();
   const [searchQuery, setSearchQuery] = useState("");
+  const router = useRouter();
 
   // DEBUG: Mostrar componente de debug si no está cargado
   if (!isLoaded) {
@@ -29,8 +30,18 @@ export default function HomePage() {
   }
 
   // If not authenticated, redirect to sign-in instead of landing
+  useEffect(() => {
+    if (isLoaded && !user) {
+      router.push("/sign-in");
+    }
+  }, [isLoaded, user, router]);
+
   if (!user) {
-    redirect("/sign-in");
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">Redirecting to sign in...</div>
+      </div>
+    );
   }
 
   const handleSearchChange = (value: string) => {
