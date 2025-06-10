@@ -28,27 +28,89 @@ function TrueLayerCallbackContent() {
     }
 
     if (code) {
-      const toastId = toast.loading(
-        "Connecting to your bank and fetching account details..."
-      );
+      const toastId = toast.loading("Connecting to your bank...");
 
+      // First step: Exchange token and redirect immediately
       axios
         .post("/api/truelayer/exchange-token", { code })
         .then((exchangeRes) => {
-          toast.loading("Finalizing setup and syncing transactions...", {
-            id: toastId,
-          });
-          return axios.post("/api/truelayer/sync", {
-            access_token: exchangeRes.data.access_token,
-            connection_id: exchangeRes.data.connection_id,
-            force: true,
-          });
-        })
-        .then(() => {
-          toast.success("Bank connected and accounts synced successfully!", {
-            id: toastId,
-          });
-          router.push("/accounts");
+          // Store connection ID for later reference
+          const connectionId = exchangeRes.data.connection_id;
+
+          // Generate a unique timestamp to force the UI to treat this as a new account
+          const timestamp = Date.now();
+          localStorage.setItem("lastConnectedAccountId", connectionId);
+          localStorage.setItem("lastConnectedTimestamp", timestamp.toString());
+          console.log(
+            "Stored connection ID:",
+            connectionId,
+            "with timestamp:",
+            timestamp
+          );
+
+          // Show success message
+          toast.success(
+            "Bank connected successfully! Syncing transactions in background...",
+            {
+              id: toastId,
+              duration: 5000,
+            }
+          );
+
+          // Sync immediately to create the account and get its ID
+          return axios
+            .post("/api/truelayer/sync", {
+              access_token: exchangeRes.data.access_token,
+              connection_id: connectionId,
+              force: true,
+            })
+            .then((syncRes) => {
+              // If we have account data, save the first account ID
+              if (syncRes.data.accounts && syncRes.data.accounts.length > 0) {
+                // Store the actual account ID instead of connection ID
+                const accountId = syncRes.data.accounts[0].account.id;
+                localStorage.setItem("lastConnectedAccountId", accountId);
+                console.log(
+                  "Stored new account ID:",
+                  accountId,
+                  "with timestamp:",
+                  timestamp
+                );
+
+                // Dispatch custom event with account ID and timestamp
+                if (typeof window !== "undefined") {
+                  const event = new CustomEvent("account-created", {
+                    detail: {
+                      accountId,
+                      timestamp,
+                      isNewConnection: true,
+                    },
+                  });
+                  window.dispatchEvent(event);
+                  console.log(
+                    "Dispatched account-created event with ID:",
+                    accountId
+                  );
+                }
+              } else {
+                console.warn("No accounts found in sync response");
+                // Dispatch generic event
+                if (typeof window !== "undefined") {
+                  const event = new CustomEvent("account-created", {
+                    detail: {
+                      timestamp,
+                      isNewConnection: true,
+                    },
+                  });
+                  window.dispatchEvent(event);
+                }
+              }
+
+              // Redirect to accounts page
+              router.push(
+                "/accounts?newAccount=true&autoRefresh=true&ts=" + timestamp
+              );
+            });
         })
         .catch((err) => {
           console.error("TrueLayer Process Error:", err);

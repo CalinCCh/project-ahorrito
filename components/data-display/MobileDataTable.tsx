@@ -6,11 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { 
-  Search, 
-  Filter, 
-  MoreVertical, 
-  ChevronDown, 
+import {
+  Search,
+  Filter,
+  MoreVertical,
+  ChevronDown,
   ChevronUp,
   Eye,
   Edit,
@@ -27,7 +27,7 @@ import {
   Car,
   Smartphone,
   Heart,
-  UtensilsCrossed
+  UtensilsCrossed,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -37,7 +37,17 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
-import { ColumnDef, Row, useReactTable, getCoreRowModel, getFilteredRowModel, getSortedRowModel, getPaginationRowModel, ColumnFiltersState, SortingState } from "@tanstack/react-table";
+import {
+  ColumnDef,
+  Row,
+  useReactTable,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getSortedRowModel,
+  getPaginationRowModel,
+  ColumnFiltersState,
+  SortingState,
+} from "@tanstack/react-table";
 import { useConfirm } from "@/hooks/use-confirm";
 
 // Import the icon mapper with colors
@@ -81,28 +91,32 @@ interface LegacyMobileDataTableProps {
   className?: string;
 }
 
-type MobileDataTableAllProps<TData, TValue> = MobileDataTableProps<TData, TValue> | LegacyMobileDataTableProps;
+type MobileDataTableAllProps<TData, TValue> =
+  | MobileDataTableProps<TData, TValue>
+  | LegacyMobileDataTableProps;
 
 function isLegacyProps(props: any): props is LegacyMobileDataTableProps {
-  return 'renderMobileCard' in props;
+  return "renderMobileCard" in props;
 }
 
-export function MobileDataTable<TData, TValue>(props: MobileDataTableAllProps<TData, TValue>) {
+export function MobileDataTable<TData, TValue>(
+  props: MobileDataTableAllProps<TData, TValue>
+) {
   if (isLegacyProps(props)) {
     return <LegacyMobileDataTable {...props} />;
   }
-  
+
   return <TransactionsMobileDataTable {...props} />;
 }
 
 // Helper function to get category icon and name
 function getCategoryInfo(transaction: any) {
   console.log("Transaction data:", transaction); // Debug
-  
+
   // Try different ways to get category info
   let categoryName = null;
   let iconName = null;
-  
+
   // Check for userCategory first
   if (transaction.userCategory) {
     categoryName = transaction.userCategory.name || transaction.userCategory;
@@ -111,7 +125,8 @@ function getCategoryInfo(transaction: any) {
   }
   // Then check for predefinedCategory
   else if (transaction.predefinedCategory) {
-    categoryName = transaction.predefinedCategory.name || transaction.predefinedCategory;
+    categoryName =
+      transaction.predefinedCategory.name || transaction.predefinedCategory;
     iconName = transaction.predefinedCategory.iconName;
     console.log("Found predefinedCategory:", { categoryName, iconName });
   }
@@ -120,45 +135,45 @@ function getCategoryInfo(transaction: any) {
     categoryName = transaction.category;
     console.log("Found direct category:", categoryName);
   }
-  
+
   // If no icon name found, try to map from category name
   if (!iconName && categoryName) {
     // Simple mapping for common categories
     const categoryIconMap: Record<string, string> = {
-      'food': 'UtensilsCrossed',
-      'shopping': 'ShoppingCart',
-      'transport': 'Car',
-      'home': 'Home',
-      'technology': 'Smartphone',
-      'health': 'Heart',
-      'entertainment': 'Film',
-      'groceries': 'ShoppingCart',
-      'restaurant': 'UtensilsCrossed',
-      'gas': 'Car',
-      'utilities': 'Home',
-      'phone': 'Smartphone',
-      'internet': 'Smartphone',
-      'medical': 'Heart',
-      'pharmacy': 'Heart',
-      'clothing': 'Shirt',
-      'education': 'GraduationCap',
-      'travel': 'Plane',
-      'fitness': 'Dumbbell',
-      'pets': 'PawPrint',
-      'bills': 'FileText',
-      'insurance': 'Shield',
-      'salary': 'Briefcase',
-      'investment': 'TrendingUp',
+      food: "UtensilsCrossed",
+      shopping: "ShoppingCart",
+      transport: "Car",
+      home: "Home",
+      technology: "Smartphone",
+      health: "Heart",
+      entertainment: "Film",
+      groceries: "ShoppingCart",
+      restaurant: "UtensilsCrossed",
+      gas: "Car",
+      utilities: "Home",
+      phone: "Smartphone",
+      internet: "Smartphone",
+      medical: "Heart",
+      pharmacy: "Heart",
+      clothing: "Shirt",
+      education: "GraduationCap",
+      travel: "Plane",
+      fitness: "Dumbbell",
+      pets: "PawPrint",
+      bills: "FileText",
+      insurance: "Shield",
+      salary: "Briefcase",
+      investment: "TrendingUp",
     };
-    
+
     const lowerCategoryName = categoryName.toLowerCase();
-    iconName = categoryIconMap[lowerCategoryName] || 'Hash';
+    iconName = categoryIconMap[lowerCategoryName] || "Hash";
     console.log("Mapped category to icon:", { categoryName, iconName });
   }
-  
+
   return {
     categoryName: categoryName || null,
-    iconName: iconName || 'Hash'
+    iconName: iconName || "Hash",
   };
 }
 
@@ -235,24 +250,24 @@ function TransactionsMobileDataTable<TData, TValue>({
   });
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'EUR',
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "EUR",
     }).format(amount);
   };
 
   const formatDate = (date: string | Date) => {
-    return new Date(date).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
+    return new Date(date).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
     });
   };
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <ConfirmDialog />
-      
+
       {/* Delete button when items selected - mobile optimized */}
       {table.getFilteredSelectedRowModel().rows.length > 0 && (
         <div className="flex-shrink-0 p-3 bg-blue-50 border-b border-blue-200">
@@ -282,16 +297,16 @@ function TransactionsMobileDataTable<TData, TValue>({
             {table.getRowModel().rows.map((row) => {
               const transaction = row.original as any;
               const isSelected = row.getIsSelected();
-              
+
               // Get category info with improved logic
               const { categoryName, iconName } = getCategoryInfo(transaction);
-              
-              console.log("Rendering transaction:", { 
-                payee: transaction.payee, 
-                categoryName, 
-                iconName
+
+              console.log("Rendering transaction:", {
+                payee: transaction.payee,
+                categoryName,
+                iconName,
               });
-              
+
               return (
                 <motion.div
                   key={row.id}
@@ -299,7 +314,9 @@ function TransactionsMobileDataTable<TData, TValue>({
                   animate={{ opacity: 1, y: 0 }}
                   className={cn(
                     "bg-white rounded-lg border p-3 transition-all duration-200",
-                    isSelected ? "ring-2 ring-blue-500 bg-blue-50" : "hover:shadow-md"
+                    isSelected
+                      ? "ring-2 ring-blue-500 bg-blue-50"
+                      : "hover:shadow-md"
                   )}
                   onClick={() => row.toggleSelected()}
                 >
@@ -310,7 +327,7 @@ function TransactionsMobileDataTable<TData, TValue>({
                         <div className="flex-shrink-0 scale-75">
                           {renderIconWithBackground(iconName)}
                         </div>
-                        
+
                         <div className="flex flex-col flex-1 min-w-0">
                           <h3 className="font-medium text-slate-800 truncate text-sm">
                             {transaction.payee}
@@ -322,22 +339,26 @@ function TransactionsMobileDataTable<TData, TValue>({
                           )}
                         </div>
                       </div>
-                      
+
                       <div className="space-y-1">
                         <div className="flex items-center justify-between">
                           <span className="text-xs text-slate-500 flex items-center gap-1">
                             <Calendar className="w-3 h-3" />
                             {formatDate(transaction.date)}
                           </span>
-                          <span className={cn(
-                            "text-sm font-semibold",
-                            transaction.amount > 0 ? "text-green-600" : "text-red-600"
-                          )}>
+                          <span
+                            className={cn(
+                              "text-sm font-semibold",
+                              transaction.amount > 0
+                                ? "text-green-600"
+                                : "text-red-600"
+                            )}
+                          >
                             {transaction.amount > 0 ? "+" : ""}
                             {formatCurrency(transaction.amount)}
                           </span>
                         </div>
-                        
+
                         {isAllAccountsView && transaction.account && (
                           <div className="flex items-center gap-1 text-xs text-slate-500">
                             <CreditCard className="w-3 h-3" />
@@ -348,12 +369,14 @@ function TransactionsMobileDataTable<TData, TValue>({
                         {/* Notes if available */}
                         {transaction.notes && (
                           <div className="text-xs text-slate-500 italic truncate">
-                            "{transaction.notes}"
+                            {transaction.notes.startsWith("Categoría:")
+                              ? null
+                              : transaction.notes}
                           </div>
                         )}
                       </div>
                     </div>
-                    
+
                     <div className="ml-2 flex items-center">
                       <input
                         type="checkbox"
@@ -374,8 +397,12 @@ function TransactionsMobileDataTable<TData, TValue>({
               <div className="w-12 h-12 mx-auto mb-3 bg-slate-100 rounded-full flex items-center justify-center">
                 <Search className="w-6 h-6 text-slate-400" />
               </div>
-              <h3 className="text-sm font-medium text-slate-800 mb-1">No transactions found</h3>
-              <p className="text-xs text-slate-500">Try adjusting your search criteria</p>
+              <h3 className="text-sm font-medium text-slate-800 mb-1">
+                No transactions found
+              </h3>
+              <p className="text-xs text-slate-500">
+                Try adjusting your search criteria
+              </p>
             </div>
           </div>
         )}
@@ -500,7 +527,7 @@ function LegacyMobileDataTable({
           {onSearchChange && (
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-600" />
                 <Input
                   placeholder="Search..."
                   value={searchValue}
@@ -537,11 +564,7 @@ function LegacyMobileDataTable({
         <div className="mt-6 text-center">
           <p className="text-sm text-slate-500">
             Showing {filteredData.length} of {data.length} items
-            {searchValue && (
-              <span className="ml-1">
-                for "{searchValue}"
-              </span>
-            )}
+            {searchValue && <span className="ml-1">for "{searchValue}"</span>}
           </p>
         </div>
       )}
@@ -587,7 +610,7 @@ export function MobileCardActions({
           </DropdownMenuItem>
         )}
         {onDelete && (
-          <DropdownMenuItem 
+          <DropdownMenuItem
             onClick={onDelete}
             className="text-red-600 focus:text-red-600"
           >

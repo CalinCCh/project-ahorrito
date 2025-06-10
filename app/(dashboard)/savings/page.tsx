@@ -62,7 +62,7 @@ export default function SavingsPage() {
                 {/* Right side - Search and action */}
                 <div className="flex items-center gap-3">
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-600 w-5 h-5" />
                     <Input
                       placeholder="Search savings goals..."
                       className="pl-10 bg-white/60 backdrop-blur-sm border-white/40 focus:bg-white/80 transition-all duration-200 w-64"

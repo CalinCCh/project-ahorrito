@@ -72,12 +72,17 @@ export function useAIAssistant(): UseAIAssistantReturn {
     setMessages((prev) => [...prev, userMessage]);
 
     try {
-      const response = await client.api["ai-assistant"].chat.$post({
-        json: {
+      // Usar fetch en lugar del cliente Hono
+      const response = await fetch("/api/ai-assistant/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
           question,
           includeContext: true,
-          intent: intent as any,
-        },
+          intent,
+        }),
       });
 
       if (!response.ok) {
@@ -127,7 +132,8 @@ export function useAIAssistant(): UseAIAssistantReturn {
 
   const loadSuggestions = useCallback(async () => {
     try {
-      const response = await client.api["ai-assistant"].suggestions.$get();
+      // Usar fetch en lugar del cliente Hono
+      const response = await fetch("/api/ai-assistant/suggestions");
 
       if (response.ok) {
         const data = await response.json();
@@ -140,9 +146,8 @@ export function useAIAssistant(): UseAIAssistantReturn {
 
   const loadQuickInsights = useCallback(async () => {
     try {
-      const response = await client.api["ai-assistant"][
-        "quick-insights"
-      ].$get();
+      // Usar fetch en lugar del cliente Hono
+      const response = await fetch("/api/ai-assistant/quick-insights");
 
       if (response.ok) {
         const data = await response.json();
@@ -203,11 +208,16 @@ export function useQuickAI() {
     setIsLoading(true);
 
     try {
-      const response = await client.api["ai-assistant"].chat.$post({
-        json: {
+      // Usar fetch en lugar del cliente Hono
+      const response = await fetch("/api/ai-assistant/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
           question,
           includeContext: true,
-        },
+        }),
       });
 
       if (!response.ok) {

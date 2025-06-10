@@ -1,14 +1,20 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
-};
-
-module.exports = {
   eslint: { ignoreDuringBuilds: true },
-  images: {
-    domains: ["img.clerk.com"],
+  typescript: { ignoreBuildErrors: true },
+  experimental: {
+    serverComponentsExternalPackages: ["@clerk/nextjs"]
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "img.clerk.com",
+      },
+    ],
+  },
+  output: 'standalone'
 };
 
 export default nextConfig;

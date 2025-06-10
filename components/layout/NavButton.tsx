@@ -33,7 +33,7 @@ export const NavButton = memo<Props>(({ href, label, isActive }) => {
 
   return (
     <Button asChild size="sm" variant="outline" className={buttonClassName}>
-      <Link href={href} {...ariaAttributes}>
+      <Link href={href} {...ariaAttributes} prefetch={true}>
         {label}
       </Link>
     </Button>

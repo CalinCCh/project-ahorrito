@@ -1,7 +1,14 @@
 "use client";
 
-import React, { memo, useState, useCallback, useMemo } from "react";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import React, {
+  memo,
+  useState,
+  useCallback,
+  useMemo,
+  lazy,
+  Suspense,
+} from "react";
+import { SheetTrigger } from "@/components/ui/sheet";
 import { useMedia } from "react-use";
 import { usePathname, useRouter } from "next/navigation";
 
@@ -9,6 +16,15 @@ import { NavButton } from "@/components/layout/NavButton";
 import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
 
+// Lazy load the Sheet component to reduce initial bundle size
+const Sheet = lazy(() =>
+  import("@/components/ui/sheet").then((mod) => ({ default: mod.Sheet }))
+);
+const SheetContent = lazy(() =>
+  import("@/components/ui/sheet").then((mod) => ({ default: mod.SheetContent }))
+);
+
+// Definir rutas como constantes para evitar re-renderizados
 const routes = [
   {
     href: "/",
@@ -78,34 +94,46 @@ export const Navigation = memo(() => {
   // Memoize mobile navigation JSX
   const mobileNavigation = useMemo(
     () => (
-      <Sheet open={isOpen} onOpenChange={handleOpenChange}>
-        <SheetTrigger asChild>
+      <Suspense
+        fallback={
           <Button {...menuButtonProps}>
             <Menu className="size-4" aria-hidden="true" />
           </Button>
-        </SheetTrigger>
-        <SheetContent side="left" className="px-2" aria-label="Navigation menu">
-          <nav
-            className="flex flex-col gap-y-2 pt-6"
-            role="navigation"
-            aria-label="Main navigation"
-            id="navigation-menu"
+        }
+      >
+        <Sheet open={isOpen} onOpenChange={handleOpenChange}>
+          <SheetTrigger asChild>
+            <Button {...menuButtonProps}>
+              <Menu className="size-4" aria-hidden="true" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent
+            side="left"
+            className="px-2"
+            aria-label="Navigation menu"
           >
-            {routes.map((route) => (
-              <Button
-                key={route.href}
-                variant={route.href === pathname ? "secondary" : "ghost"}
-                onClick={() => onClick(route.href)}
-                className="w-full justify-start"
-                aria-current={route.href === pathname ? "page" : undefined}
-                role="menuitem"
-              >
-                {route.label}
-              </Button>
-            ))}
-          </nav>
-        </SheetContent>
-      </Sheet>
+            <nav
+              className="flex flex-col gap-y-2 pt-6"
+              role="navigation"
+              aria-label="Main navigation"
+              id="navigation-menu"
+            >
+              {routes.map((route) => (
+                <Button
+                  key={route.href}
+                  variant={route.href === pathname ? "secondary" : "ghost"}
+                  onClick={() => onClick(route.href)}
+                  className="w-full justify-start"
+                  aria-current={route.href === pathname ? "page" : undefined}
+                  role="menuitem"
+                >
+                  {route.label}
+                </Button>
+              ))}
+            </nav>
+          </SheetContent>
+        </Sheet>
+      </Suspense>
     ),
     [isOpen, handleOpenChange, menuButtonProps, pathname, onClick]
   );

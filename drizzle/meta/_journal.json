@@ -71,6 +71,27 @@
       "when": 1749149468356,
       "tag": "0009_normal_goblin_queen",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1749523067399,
+      "tag": "0010_slim_stone_men",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1749523607229,
+      "tag": "0011_sour_sunfire",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1749524164686,
+      "tag": "0012_lying_stranger",
+      "breakpoints": true
     }
   ]
 }

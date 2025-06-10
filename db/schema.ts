@@ -5,7 +5,7 @@ import { z } from "zod";
 
 export const accounts = pgTable("accounts", {
     id: text("id").primaryKey(),
-    plaidId: text("plaid_id").unique(),
+    plaidId: text("plaid_id"),
     name: text("name").notNull(),
     userId: text("user_id").notNull(),
 });
@@ -97,7 +97,6 @@ export const transactions = pgTable("transactions", {
 }, (table) => {
     return {
         transactionUniqueIdx: uniqueIndex("transaction_unique_idx").on(table.accountId, table.amount, table.payee, table.date),
-        externalIdIdx: uniqueIndex("external_id_idx").on(table.externalId)
     }
 })
 

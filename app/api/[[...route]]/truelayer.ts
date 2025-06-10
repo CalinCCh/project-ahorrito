@@ -148,23 +148,46 @@ app.post('/sync', async (c) => {
         for (const account of accountsList) {
             if (account_id && account.account_id !== account_id) continue;
             try {
-                const [savedAccount] = await db.insert(accounts)
-                    .values({
-                        id: createId(),
-                        plaidId: account.account_id,
-                        name: account.display_name || account.account_name,
-                        userId,
-                    })
-                    .onConflictDoUpdate({
-                        target: accounts.plaidId,
-                        set: { name: account.display_name || account.account_name },
-                    })
-                    .returning();
+                // Primero verificar si ya existe una cuenta con este plaidId para este usuario
+                const existingAccount = await db.query.accounts.findFirst({
+                    where: and(
+                        eq(accounts.plaidId, account.account_id),
+                        eq(accounts.userId, userId)
+                    ),
+                });
+
+                let savedAccount;
+                if (existingAccount) {
+                    // Actualizar cuenta existente
+                    [savedAccount] = await db.update(accounts)
+                        .set({ name: account.display_name || account.account_name })
+                        .where(eq(accounts.id, existingAccount.id))
+                        .returning();
+                } else {
+                    // Crear nueva cuenta
+                    const accountId = createId();
+
+                    // Insertar la cuenta con el nuevo ID, sin usar onConflictDoUpdate
+                    const [savedAccount] = await db.insert(accounts)
+                        .values({
+                            id: accountId,
+                            plaidId: account.account_id,
+                            name: account.display_name || account.account_name,
+                            userId,
+                        })
+                        .returning();
+
+                    console.log('[SYNC] Created new account:', {
+                        id: savedAccount.id,
+                        name: savedAccount.name,
+                        plaidId: savedAccount.plaidId
+                    });
+                }
                 const balanceRes = await fetch(`${API_BASE_URL}/data/v1/accounts/${account.account_id}/balance`, {
                     headers: { Authorization: `Bearer ${accessToken}` },
                 });
                 let balances = [];
-                if (balanceRes.ok) {
+                if (balanceRes.ok && savedAccount) {
                     const balanceData = await balanceRes.json();
                     balances = balanceData.results;
                     if (balances && balances.length > 0) {
@@ -182,7 +205,7 @@ app.post('/sync', async (c) => {
                     }
                     let fromDate: Date | null = null;
                     let autoForce = false;
-                    if (!balanceOnly) {
+                    if (!balanceOnly && savedAccount) {
                         if (!force) {
                             fromDate = await getLastTransactionDate(savedAccount.id);
                             if (fromDate) {
@@ -203,7 +226,7 @@ app.post('/sync', async (c) => {
                             transactionsUrl.searchParams.append('from', fromDateParam);
                         }
                         console.log('[SYNC] Requesting transactions', {
-                            accountId: savedAccount.id,
+                            accountId: savedAccount?.id,
                             force,
                             autoForce,
                             fromDateParam,
@@ -212,7 +235,7 @@ app.post('/sync', async (c) => {
                         const transactionRes = await fetch(transactionsUrl.toString(), {
                             headers: { Authorization: `Bearer ${accessToken}` },
                         });
-                        if (transactionRes.ok) {
+                        if (transactionRes.ok && savedAccount) {
                             const transactionData = await transactionRes.json();
                             const fetchedCount = Array.isArray(transactionData.results) ? transactionData.results.length : 0;
                             console.log('[SYNC][RAW_TRANSACTIONS] Fetched:', {
@@ -313,17 +336,19 @@ app.post('/sync', async (c) => {
                     }
                 }
                 // Contar las transacciones reales en la base de datos para esta cuenta
-                const transactionCount = await db
-                    .select({ count: sql<number>`cast(count(${transactions.id}) as int)` })
-                    .from(transactions)
-                    .where(eq(transactions.accountId, savedAccount.id))
-                    .then(result => result[0]?.count || 0);
-                accountResults.push({
-                    account: savedAccount,
-                    balance: balances[0] || null,
-                    transactions: transactionCount,
-                    diagnostics: null,
-                });
+                if (savedAccount) {
+                    const transactionCount = await db
+                        .select({ count: sql<number>`cast(count(${transactions.id}) as int)` })
+                        .from(transactions)
+                        .where(eq(transactions.accountId, savedAccount.id))
+                        .then(result => result[0]?.count || 0);
+                    accountResults.push({
+                        account: savedAccount,
+                        balance: balances[0] || null,
+                        transactions: transactionCount,
+                        diagnostics: null,
+                    });
+                }
             } catch (accountError) {
                 // Error importante: error al procesar cuenta
                 console.error('[SYNC][ACCOUNT_ERROR]', account.account_id, accountError);
@@ -392,7 +417,7 @@ app.post('/exchange-token', clerkMiddleware(), async (c) => {
                 grant_type: 'authorization_code',
                 client_id: process.env.TRUELAYER_CLIENT_ID!,
                 client_secret: process.env.TRUELAYER_CLIENT_SECRET!,
-                redirect_uri: process.env.TRUELAYER_REDIRECT_URI!, 
+                redirect_uri: process.env.TRUELAYER_REDIRECT_URI!,
                 code: codeFromBody,
             }),
         });

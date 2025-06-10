@@ -62,7 +62,7 @@ export class DevTools {
      */
     private static initAccessibilityTesting(): void {
         // Run accessibility checks after DOM changes
-        let timeoutId: NodeJS.Timeout;
+        let timeoutId: ReturnType<typeof setTimeout>;
 
         const checkAccessibility = () => {
             clearTimeout(timeoutId);
@@ -308,7 +308,7 @@ export function withDevTools<T extends object>(
         return Component;
     }
 
-    const componentName = name || Component.displayName || Component.name || 'Unknown';    return (props: T) => {
+    const componentName = name || Component.displayName || Component.name || 'Unknown'; return (props: T) => {
         DevTools.trackRender(componentName);
 
         const startTime = performance.now();

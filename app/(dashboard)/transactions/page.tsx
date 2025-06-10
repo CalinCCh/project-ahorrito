@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
@@ -63,6 +63,35 @@ export default function TransactionsPage() {
   const [importResults, setImportResults] = useState(INITIAL_IMPORT_RESULTS);
   const [filterValue, setFilterValue] = useState("");
   const [AccountDialog, confirm] = useSelectAccount();
+
+  // Para garantizar que la UI sea consistente entre desktop y móvil
+  const [isUnified, setIsUnified] = useState(true);
+
+  // Optimiza el espaciado en móvil
+  useEffect(() => {
+    // Ajusta el espaciado superior para móvil
+    const adjustMobileSpacing = () => {
+      const isMobile = window.innerWidth < 768;
+      if (isMobile) {
+        // Busca el contenedor principal en la vista móvil
+        const container = document.querySelector(".smart-scroll");
+        if (container) {
+          // Reduce el padding para mejorar el espaciado
+          (container as HTMLElement).style.paddingTop = "0px";
+        }
+      }
+    };
+
+    // Ejecuta el ajuste inmediatamente
+    adjustMobileSpacing();
+
+    // Ejecuta el ajuste cuando cambia el tamaño de la ventana
+    window.addEventListener("resize", adjustMobileSpacing);
+
+    return () => {
+      window.removeEventListener("resize", adjustMobileSpacing);
+    };
+  }, []);
 
   const transactionsQuery = useGetTransactions();
   const totalTransactionsQuery = useGetTotalTransactions();
@@ -184,7 +213,9 @@ export default function TransactionsPage() {
             <h3 className="text-lg sm:text-xl font-semibold text-slate-800 mb-2">
               Loading Transactions
             </h3>
-            <p className="text-sm sm:text-base text-slate-600">Fetching your financial data...</p>
+            <p className="text-sm sm:text-base text-slate-600">
+              Fetching your financial data...
+            </p>
           </motion.div>
         </div>
       </div>
@@ -233,26 +264,26 @@ export default function TransactionsPage() {
             className="flex-1 flex flex-col min-h-0"
           >
             <UnifiedTransactionsView
-                title="Transactions"
-                description={getTransactionsDescription(totalCount)}
-                totalCount={totalCount}
-                filterValue={filterValue}
-                onFilterChange={setFilterValue}
-                onAddNew={newTransaction.onOpen}
-                onUpload={handleUpload}
-                onSync={handleSync}
-                isSyncing={isSyncing}
-                UploadButtonComponent={UploadButton}
-                columns={getColumns(hasLinkedBankAccount, isAllAccountsView)}
-                data={transactions}
-                onDelete={(row: Row<ResponseType>[]) => {
-                  const ids = row.map((r) => r.original.id);
-                  deleteTransactions.mutate({ ids });
-                }}
-                disabled={isDisabled}
-                hasLinkedBankAccount={hasLinkedBankAccount}
-                isAllAccountsView={isAllAccountsView}
-              />
+              title="Transactions"
+              description={getTransactionsDescription(totalCount)}
+              totalCount={totalCount}
+              filterValue={filterValue}
+              onFilterChange={setFilterValue}
+              onAddNew={newTransaction.onOpen}
+              onUpload={handleUpload}
+              onSync={handleSync}
+              isSyncing={isSyncing}
+              UploadButtonComponent={UploadButton}
+              columns={getColumns(hasLinkedBankAccount, isAllAccountsView)}
+              data={transactions}
+              onDelete={(row: Row<ResponseType>[]) => {
+                const ids = row.map((r) => r.original.id);
+                deleteTransactions.mutate({ ids });
+              }}
+              disabled={isDisabled}
+              hasLinkedBankAccount={hasLinkedBankAccount}
+              isAllAccountsView={isAllAccountsView}
+            />
           </motion.div>
         </div>
       </div>

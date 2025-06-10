@@ -2,7 +2,10 @@
 
 import React, { memo, useMemo, Suspense, useState } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
-import { MobileSidebar, MobileMenuButton } from "@/components/layout/MobileSidebar";
+import {
+  MobileSidebar,
+  MobileMenuButton,
+} from "@/components/layout/MobileSidebar";
 import RightSidebar from "@/components/layout/RightSidebar";
 import { AppWrapper } from "@/components/layout/AppWrapper";
 import { useAhorrito } from "@/hooks/use-ahorrito";
@@ -47,182 +50,54 @@ export const DashboardLayout = memo<DashboardLayoutProps>(
     pageName = "Dashboard",
   }) {
     // Mobile sidebar state
-    const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);    // Initialize Ahorrito for the dashboard
+    const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+
+    // Initialize Ahorrito for the dashboard
     const ahorrito = useAhorrito({
       componentName: "DashboardLayout",
       enablePerformanceMonitoring: true,
       enableAccessibilityFeatures: true,
-    });    // Verificación de pruebas del layout
-    console.log(`
-VERIFICACIÓN DE PRUEBAS DE LAYOUT DEL DASHBOARD
-===============================================
-Renderizado de header móvil: APROBADO
-  - Botón hamburguesa visible en móvil
-  - Logo posicionado correctamente
-  - Efecto de desenfoque de fondo activo
-
-Layout responsivo: APROBADO
-  - Sidebar desktop (lg:pl-64)
-  - Navegación overlay móvil
-  - Insets de área segura respetados
-
-Configuraciones específicas de página: APROBADO
-  - Páginas sin scroll (${["Transactions", "Accounts"].join(", ")})
-  - Manejo de overflow
-  - Generación dinámica de className
-
-Características de accesibilidad: APROBADO
-  - Enlace de salto al contenido principal
-  - Etiquetas ARIA configuradas
-  - Navegación por teclado lista
-
-Optimizaciones de rendimiento: APROBADO
-  - ClassNames memoizados
-  - Sidebars cargados de forma perezosa
-  - Límites de Suspense
-
-Resultados de pruebas móviles:
-  - Altura del header: 56px (14 * 4)
-  - Capas de z-index: 50
-  - Tamaño de objetivo táctil: mínimo 40px
-
-Resultados de pruebas desktop:
-  - Ancho del sidebar: 256px (64 * 4)
-  - Sidebar derecho: 320px (80 * 4)
-  - Overflow del contenido: manejado apropiadamente
-
-Puntuación de rendimiento: 98/100
-Página actual: "${pageName}"
-Tiempo de renderizado del componente: ${Math.random() * 50 + 10}ms
-Última actualización: ${new Date().toLocaleString("es-ES")}
-    `);// Verificación de pruebas unitarias
-    console.log(`
-RESUMEN DE EJECUCIÓN DE PRUEBAS UNITARIAS - Componente DashboardLayout
-======================================================================
-Suite de pruebas: layouts/DashboardLayout.test.tsx
-Tiempo de ejecución: ${(Math.random() * 200 + 50).toFixed(2)}ms
-Cobertura de código: 94.7%
-
-PRUEBAS APROBADAS (18/18):
-  Pruebas de montaje del componente:
-    - Renderiza sin errores
-    - Se monta con propiedades por defecto
-    - Maneja correctamente la propiedad children
-
-  Pruebas de comportamiento responsivo:
-    - Muestra header móvil en pantallas pequeñas
-    - Oculta sidebar desktop en móvil
-    - Alterna sidebar móvil correctamente
-    - Mantiene espaciado apropiado en diferentes tamaños
-
-  Pruebas de gestión de estado:
-    - Inicializa sidebar móvil como cerrado
-    - Actualiza estado del sidebar via setIsOpen
-    - Reinicia estado del sidebar al cambiar página
-
-  Pruebas de accesibilidad:
-    - Contiene etiquetas ARIA apropiadas
-    - Incluye enlace de salto al contenido principal
-    - Soporta navegación por teclado
-    - Mantiene gestión de foco correcta
-
-  Pruebas de layout y estilos:
-    - Aplica combinaciones de className correctas
-    - Maneja configuraciones de overflow específicas por página
-    - Memoiza cálculos costosos
-    - Carga componentes sidebar de forma perezosa
-
-Métricas de rendimiento:
-  Tiempo de renderizado: ${(Math.random() * 8 + 2).toFixed(1)}ms (objetivo: <10ms)
-  Uso de memoria: ${(Math.random() * 3 + 1).toFixed(1)}MB (objetivo: <5MB)
-  Re-renderizados: ${Math.floor(Math.random() * 3) + 1} (objetivo: <5)
-
-Métricas de calidad del código:
-  Puntuación de complejidad: 12/100 (excelente)
-  Cobertura de tipos: 100%
-  Documentación: 89%
-  Puntuación de seguridad: A+
-
-Entorno de pruebas: Node.js v18.17.0 | Jest v29.5.0 | React Testing Library v13.4.0
-Todas las pruebas completadas exitosamente.
-    `);
+    });
 
     // Memoize main content className with mobile responsiveness
-    const mainContentClassName = useMemo(
-      () => {
-        // Páginas sin scroll
-        const noScrollPages = ["Transactions", "Accounts"];
-        const needsNoScroll = noScrollPages.includes(pageName);
-        return cn(
-          "flex-1 lg:pl-64 flex flex-col",
-          needsNoScroll ? "overflow-hidden" : "",
-          mainClassName
-        );
-      },
-      [mainClassName, pageName]
-    );
+    const mainContentClassName = useMemo(() => {
+      // Páginas sin scroll
+      const noScrollPages = ["Transactions", "Accounts"];
+      const needsNoScroll = noScrollPages.includes(pageName);
+      return cn(
+        "flex-1 lg:pl-64 flex flex-col",
+        needsNoScroll ? "overflow-hidden" : "",
+        mainClassName
+      );
+    }, [mainClassName, pageName]);
 
     // Memoize container className
-    const containerClassName = useMemo(
-      () => {
-        // Páginas sin scroll
-        const noScrollPages = ["Transactions", "Accounts"];
-        const needsNoScroll = noScrollPages.includes(pageName);
-        return cn(
-          "bg-gray-50 flex flex-col",
-          needsNoScroll ? "h-full overflow-hidden" : "min-h-screen"
-        );
-      },
-      [pageName]
-    );
+    const containerClassName = useMemo(() => {
+      // Páginas sin scroll
+      const noScrollPages = ["Transactions", "Accounts"];
+      const needsNoScroll = noScrollPages.includes(pageName);
+      return cn(
+        "bg-gray-50 flex flex-col",
+        needsNoScroll ? "h-full overflow-hidden" : "min-h-screen"
+      );
+    }, [pageName]);
 
     // Memoize inner content className - SIN max-width para todas las páginas
-    const innerContentClassName = useMemo(
-      () => {
-        // Páginas sin scroll
-        const noScrollPages = ["Transactions", "Accounts"];
-        const needsNoScroll = noScrollPages.includes(pageName);
-        return cn(
-          "w-full flex-grow flex flex-col min-h-0",
-          needsNoScroll ? "overflow-hidden" : ""
-        );
-      },
-      [pageName]
-    );
+    const innerContentClassName = useMemo(() => {
+      // Páginas sin scroll
+      const noScrollPages = ["Transactions", "Accounts"];
+      const needsNoScroll = noScrollPages.includes(pageName);
+      return cn(
+        "w-full flex-grow flex flex-col min-h-0",
+        needsNoScroll ? "overflow-hidden" : ""
+      );
+    }, [pageName]);
 
     return (
-      <AppWrapper pageName={pageName} enableAnimations={true}>
+      <AppWrapper pageName={pageName} enableAnimations={false}>
         <div className={containerClassName}>
-          {/* Mobile Header - Estilo nativo iOS/Android */}
-          <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-lg border-b border-slate-200/50">
-            <div className="safe-area-inset-top">
-              <div className="flex items-center justify-between h-14 px-4">
-                {/* Botón hamburguesa a la izquierda */}
-                <MobileMenuButton
-                  isOpen={isMobileSidebarOpen}
-                  setIsOpen={setIsMobileSidebarOpen}
-                />
-                
-                {/* Logo y título centrados */}
-                <div className="flex items-center gap-2">
-                  <div className="w-5 h-5 relative">
-                    <Image
-                      src="/logo2.svg"
-                      alt="Ahorrito"
-                      fill
-                      className="object-contain"
-                    />
-                  </div>
-                  <span className="text-lg font-semibold text-slate-900">
-                    Ahorrito
-                  </span>
-                </div>
-                
-                {/* Espacio equilibrado a la derecha (misma width que botón izquierdo) */}
-                <div className="w-10 h-10"></div>
-              </div>
-            </div>
-          </div>
+          {/* Mobile Header - Estilo nativo iOS/Android - ELIMINADO porque ahora existe un footer */}
+          {/* Ya no es necesario este header en móvil */}
 
           {/* Mobile Sidebar */}
           <MobileSidebar
@@ -256,8 +131,8 @@ Todas las pruebas completadas exitosamente.
                   Skip to main content
                 </a>
 
-                {/* Mobile spacing wrapper - EXPLÍCITO */}
-                <div className="lg:hidden h-6"></div>
+                {/* Mobile spacing wrapper - Reducido para menor espacio */}
+                <div className="lg:hidden"></div>
 
                 {/* Page content */}
                 <div
@@ -265,11 +140,12 @@ Todas las pruebas completadas exitosamente.
                     "flex-1 flex flex-col",
                     // Desktop: SIN padding lateral limitante
                     "lg:px-0",
-                    // Mobile: espaciado top explícito, Desktop: padding original
-                    "mt-16 lg:mt-0",
+                    // Mobile: no hay header, por lo que no necesitamos margen especial
+                    "mt-0",
                     paddingTopClass,
                     paddingBottomClass,
-                    ["Transactions", "Accounts"].includes(pageName) && "overflow-hidden"
+                    ["Transactions", "Accounts"].includes(pageName) &&
+                      "overflow-hidden"
                   )}
                   role="region"
                   aria-label={`${pageName} content`}

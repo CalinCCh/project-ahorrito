@@ -264,8 +264,8 @@ const app = new Hono()
       const summaryResult = await db.execute(
         sql`SELECT * FROM savings_summary WHERE user_id = ${auth.userId}`
       );
-      
-      const summary = summaryResult[0];
+
+      const summary = summaryResult.rows && summaryResult.rows.length > 0 ? summaryResult.rows[0] : null;
 
       if (summary) {
         const totalSaved = Number(summary.total_saved) || 0;
@@ -284,14 +284,16 @@ const app = new Hono()
         });
       } else {
         // fallback to old logic if summary not found
-        return c.json({ data: {
-          totalSaved: 0,
-          totalTarget: 0,
-          overallProgress: 0,
-          activeGoalsCount: 0,
-          completedGoalsCount: 0,
-          currency: 'EUR'
-        }});
+        return c.json({
+          data: {
+            totalSaved: 0,
+            totalTarget: 0,
+            overallProgress: 0,
+            activeGoalsCount: 0,
+            completedGoalsCount: 0,
+            currency: 'EUR'
+          }
+        });
       }
     } catch (error) {
       console.error("Error fetching savings summary:", error);

@@ -135,13 +135,13 @@ input::-webkit-password-reveal-button {
     font-family: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system,
       BlinkMacSystemFont, sans-serif;
   }
-  
+
   /* Solo aplicar sin scroll en páginas específicas */
   .no-scroll-page {
     height: 100% !important;
     overflow: hidden !important;
   }
-  
+
   .no-scroll-page html,
   .no-scroll-page body {
     height: 100% !important;
@@ -537,12 +537,12 @@ input[type="number"].no-spinner {
 
 /* Hide scrollbar completely */
 .scrollbar-hide {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
 }
 
 .scrollbar-hide::-webkit-scrollbar {
-  display: none;  /* Chrome, Safari and Opera */
+  display: none; /* Chrome, Safari and Opera */
 }
 
 /* Force no scroll on transactions page */
@@ -894,8 +894,38 @@ input[type="number"].no-spinner {
   .mobile-landscape-adjust {
     @apply py-2;
   }
-  
+
   .mobile-landscape-header {
     @apply py-2 text-sm;
   }
+}
+
+/* Efecto shimmer para los skeletons */
+.shimmer-effect {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.2) 20%,
+    rgba(255, 255, 255, 0.5) 40%,
+    rgba(255, 255, 255, 0) 60%
+  );
+  background-size: 200% 100%;
+  animation: shimmerAnimation 2s infinite linear;
+  pointer-events: none;
+}
+
+@keyframes shimmerAnimation {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Estilo para transición suave en las cards */
+.account-card {
+  transition: all 0.3s ease-in-out;
 }

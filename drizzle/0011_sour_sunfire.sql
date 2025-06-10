@@ -1,0 +1,1 @@
+DROP INDEX "user_plaid_id_unique";

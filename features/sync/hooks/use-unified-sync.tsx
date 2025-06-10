@@ -29,6 +29,8 @@ export function useUnifiedSync() {
   const queryClient = useQueryClient();
   const { showSyncProgress, updateSyncProgress, dismissSyncProgress } =
     useSyncProgressToast();
+  let progressInterval: ReturnType<typeof setInterval> | null = null;
+
   const syncSingleAccount = async (account: Account) => {
     if (!account?.plaidId) {
       console.error("Account missing plaidId:", account);
@@ -75,7 +77,6 @@ export function useUnifiedSync() {
         console.log("Could not fetch transaction count either");
       }
     }
-    let progressInterval: NodeJS.Timeout | null = null;
 
     try {
       // Use the real current transaction count as the base

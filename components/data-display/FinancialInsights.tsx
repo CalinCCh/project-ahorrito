@@ -145,13 +145,7 @@ export const FinancialInsights = ({ className }: FinancialInsightsProps) => {
                     transition={{ duration: 0.8, delay: index * 0.1 + 0.3 }}
                     className="text-xl font-bold text-slate-900"
                   >
-                    <CountUp
-                      end={insight.value}
-                      duration={2}
-                      separator=","
-                      prefix="€"
-                      preserveValue
-                    />
+                    <CountUp end={insight.value} />
                   </motion.div>
 
                   {/* Trend indicator */}

@@ -244,21 +244,21 @@ const app = new Hono()
 
             // Sort categories by value (highest to lowest)
             const sortedCategories = [...category].sort((a, b) => b.value - a.value);
-            
+
             // Take top 5 categories maximum, minimum 1
-            let finalCategories = [];
-            
+            let finalCategories: Array<{ name: string, value: number }> = [];
+
             if (sortedCategories.length > 0) {
                 const topCategories = sortedCategories.slice(0, 5);
                 const otherCategories = sortedCategories.slice(5);
                 const otherSum = otherCategories.reduce((sum, current) => sum + current.value, 0);
-                
+
                 // Keep original values for proper chart display
                 finalCategories = topCategories.map(cat => ({
                     name: cat.name,
                     value: cat.value
                 }));
-                
+
                 // Add "Other" category if there are remaining categories and we have space
                 if (otherCategories.length > 0 && otherSum > 0 && finalCategories.length < 5) {
                     finalCategories.push({
@@ -266,7 +266,7 @@ const app = new Hono()
                         value: otherSum
                     });
                 }
-                
+
                 // Ensure minimum of 1 category
                 if (finalCategories.length === 0) {
                     finalCategories = sortedCategories.slice(0, 1);

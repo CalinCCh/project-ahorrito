@@ -26,7 +26,7 @@ export default function DashboardPage() {
         {/* Primary soft gradient background */}
         <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-blue-50/40 to-indigo-50/30" />
         <div className="absolute inset-0 bg-gradient-to-tl from-purple-50/30 via-transparent to-cyan-50/20" />
-        
+
         {/* Subtle overlay for depth */}
         <div className="absolute inset-0 bg-gradient-to-b from-white/60 via-transparent to-white/40" />
 
@@ -51,7 +51,7 @@ export default function DashboardPage() {
 
       {/* Content Container - IGUAL QUE SAVINGS */}
       <div className="relative z-10">
-        <div className="container mx-auto px-4 lg:px-6 py-3 sm:py-6 pt-20 lg:pt-6">
+        <div className="container mx-auto px-4 lg:px-6 py-3 sm:py-6 lg:pt-6">
           {/* Modern Dashboard Header - Mobile Responsive */}
           <motion.div
             initial={{ opacity: 0, y: -30 }}

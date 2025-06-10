@@ -174,15 +174,7 @@ export const ModernDataCard = ({
             transition={{ duration: 0.8, delay: delay + 0.2 }}
             className="text-3xl font-bold text-slate-900"
           >
-            <CountUp
-              end={value}
-              duration={2}
-              separator=","
-              decimals={2}
-              decimal="."
-              prefix={currency === "EUR" ? "€" : "$"}
-              preserveValue
-            />
+            <CountUp end={value} />
           </motion.div>
 
           {/* Progress Bar */}

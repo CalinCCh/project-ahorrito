@@ -3,8 +3,10 @@ import type { NextRequest } from 'next/server';
 import type { ClerkMiddlewareAuth } from '@clerk/nextjs/server';
 
 const isPublicRoute = createRouteMatcher([
+  '/',
   '/sign-in(.*)',
   '/sign-up(.*)',
+  '/landing(.*)',
   '/api(.*)',
 ]);
 

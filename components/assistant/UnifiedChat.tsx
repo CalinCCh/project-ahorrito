@@ -2,12 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
-import {
-  Send,
-  Bot,
-  User,
-  Loader2,
-} from "lucide-react";
+import { Send, Bot, User, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar } from "@/components/ui/avatar";
@@ -34,16 +29,16 @@ interface UnifiedChatProps {
 }
 
 const suggestedQuestions = [
-  "How can I improve my spending habits?",
-  "What's my financial health score?",
-  "Help me create a savings plan",
-  "Analyze my monthly spending patterns",
-  "Which categories do I spend most on?",
-  "Give me tips to reduce my expenses",
-  "What's my current balance?",
-  "Show me my recent transactions",
-  "How is my financial health?",
-  "Help me set savings goals",
+  "¿Cómo puedo mejorar mis hábitos de gasto?",
+  "¿Cuál es mi puntuación de salud financiera?",
+  "Ayúdame a crear un plan de ahorro",
+  "Analiza mis patrones de gasto mensual",
+  "¿En qué categorías gasto más?",
+  "Dame consejos para reducir mis gastos",
+  "¿Cuál es mi saldo actual?",
+  "Muéstrame mis transacciones recientes",
+  "¿Cómo está mi salud financiera?",
+  "Ayúdame a establecer metas de ahorro",
 ];
 
 // Función para obtener una sugerencia aleatoria
@@ -59,29 +54,38 @@ export function UnifiedChat({
   messageSent = false,
   isProcessing = false,
   onMessageSent,
-  onProcessingChange
+  onProcessingChange,
 }: UnifiedChatProps) {
   const { user } = useUser();
   const { messages, isLoading, sendMessage } = useAIChat();
   const [input, setInput] = useState("");
-  const [randomSuggestion, setRandomSuggestion] = useState(getRandomSuggestion());
-  const [hasProcessedInitialMessage, setHasProcessedInitialMessage] = useState(false);
+  const [randomSuggestion, setRandomSuggestion] = useState(
+    getRandomSuggestion()
+  );
+  const [hasProcessedInitialMessage, setHasProcessedInitialMessage] =
+    useState(false);
   const lastProcessedMessageRef = useRef<string | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom when new messages are added
   useEffect(() => {
     if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+      scrollContainerRef.current.scrollTop =
+        scrollContainerRef.current.scrollHeight;
     }
   }, [messages]);
 
   // Process initial message when component mounts with duplication prevention
   useEffect(() => {
-    if (initialMessage && !isLoading && !messageSent && lastProcessedMessageRef.current !== initialMessage) {
+    if (
+      initialMessage &&
+      !isLoading &&
+      !messageSent &&
+      lastProcessedMessageRef.current !== initialMessage
+    ) {
       lastProcessedMessageRef.current = initialMessage;
       setHasProcessedInitialMessage(true);
-      
+
       // Send message directly without depending on handleSendMessage
       const sendInitialMessage = async () => {
         try {
@@ -89,26 +93,33 @@ export function UnifiedChat({
           await sendMessage(initialMessage);
           onMessageSent?.();
         } catch (error) {
-          console.error('Error sending initial message:', error);
+          console.error("Error sending initial message:", error);
         } finally {
           onProcessingChange?.(false);
         }
       };
       sendInitialMessage();
     }
-  }, [initialMessage, isLoading, sendMessage, messageSent, onMessageSent, onProcessingChange]);
+  }, [
+    initialMessage,
+    isLoading,
+    sendMessage,
+    messageSent,
+    onMessageSent,
+    onProcessingChange,
+  ]);
 
   const handleSendMessage = async (messageText?: string) => {
     const textToSend = messageText || input.trim();
     if (!textToSend || isLoading || isProcessing) return;
 
     setInput("");
-    
+
     try {
       onProcessingChange?.(true);
       await sendMessage(textToSend);
     } catch (error) {
-      console.error('Error sending message:', error);
+      console.error("Error sending message:", error);
     } finally {
       onProcessingChange?.(false);
     }
@@ -127,11 +138,13 @@ export function UnifiedChat({
   const isSidebar = variant === "sidebar";
 
   return (
-    <div className={cn(
-      "flex flex-col bg-white",
-      isSidebar ? "h-full" : "h-screen",
-      className
-    )}>
+    <div
+      className={cn(
+        "flex flex-col bg-white",
+        isSidebar ? "h-full" : "h-screen",
+        className
+      )}
+    >
       {/* Header - Solo para página completa */}
       {!isSidebar && (
         <div className="flex-none border-b border-gray-200 bg-gradient-to-r from-purple-50 to-violet-50">
@@ -149,29 +162,27 @@ export function UnifiedChat({
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-            </div>
+            <div className="flex items-center gap-2"></div>
           </div>
         </div>
       )}
 
       {/* Messages Area */}
       <div className="flex-1 overflow-hidden">
-        <div 
-          ref={scrollContainerRef} 
-          className="h-full overflow-y-auto"
-        >
+        <div ref={scrollContainerRef} className="h-full overflow-y-auto">
           {messages.length === 0 ? (
             // Estado inicial
             <div className="h-full flex items-center justify-center p-6">
               <div className="text-center">
-                <h2 className={cn(
-                  "font-semibold text-gray-800 mb-6",
-                  isSidebar ? "text-2xl" : "text-4xl"
-                )}>
-                  How can I help you today?
+                <h2
+                  className={cn(
+                    "font-semibold text-gray-800 mb-6",
+                    isSidebar ? "text-2xl" : "text-4xl"
+                  )}
+                >
+                  ¿En qué puedo ayudarte hoy?
                 </h2>
-                
+
                 {/* Botón de sugerencia aleatoria - Siempre visible */}
                 <div className="max-w-lg mx-auto">
                   <button
@@ -180,11 +191,23 @@ export function UnifiedChat({
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
-                        <span className="text-gray-800 font-medium leading-relaxed">{randomSuggestion}</span>
+                        <span className="text-gray-800 font-medium leading-relaxed">
+                          {randomSuggestion}
+                        </span>
                       </div>
                       <div className="ml-3 opacity-60 group-hover:opacity-100 transition-opacity duration-200">
-                        <svg className="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                        <svg
+                          className="w-5 h-5 text-purple-500"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M13 7l5 5m0 0l-5 5m5-5H6"
+                          />
                         </svg>
                       </div>
                     </div>
@@ -217,7 +240,11 @@ export function UnifiedChat({
                         ) : (
                           <Avatar className="w-8 h-8">
                             {user?.imageUrl ? (
-                              <img src={user.imageUrl} alt="User" className="w-full h-full object-cover" />
+                              <img
+                                src={user.imageUrl}
+                                alt="User"
+                                className="w-full h-full object-cover"
+                              />
                             ) : (
                               <div className="w-full h-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
                                 <User className="w-4 h-4 text-white" />
@@ -226,7 +253,7 @@ export function UnifiedChat({
                           </Avatar>
                         )}
                       </div>
-                      
+
                       {/* Message Content */}
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-semibold text-gray-900 mb-1">
@@ -252,26 +279,21 @@ export function UnifiedChat({
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="bg-gray-50 border-b border-gray-100"
+                  className="bg-gray-50 py-4 px-4 border-b border-gray-100"
                 >
-                  <div className="py-4 px-4">
-                    <div className="flex gap-3">
-                      <div className="flex-shrink-0">
-                        <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center">
-                          <Bot className="w-4 h-4 text-white" />
-                        </div>
+                  <div className="flex gap-3">
+                    <div className="flex-shrink-0">
+                      <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center">
+                        <Bot className="w-4 h-4 text-white" />
                       </div>
-                      <div className="flex-1">
-                        <div className="text-sm font-semibold text-gray-900 mb-1">
-                          Assistant
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <div className="flex space-x-1">
-                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                          </div>
-                        </div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-semibold text-gray-900 mb-1">
+                        Asistente
+                      </div>
+                      <div className="flex items-center">
+                        <Loader2 className="w-4 h-4 text-purple-500 animate-spin mr-2" />
+                        <div className="text-sm text-gray-600">Pensando...</div>
                       </div>
                     </div>
                   </div>
@@ -299,7 +321,9 @@ export function UnifiedChat({
                 placeholder="Ask me anything about your finances..."
                 className={cn(
                   "w-full bg-white border-2 border-gray-200 rounded-2xl focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 shadow-sm transition-all duration-200",
-                  isSidebar ? "py-3 px-4 text-sm min-h-[48px]" : "py-4 px-6 text-base min-h-[56px]"
+                  isSidebar
+                    ? "py-3 px-4 text-sm min-h-[48px]"
+                    : "py-4 px-6 text-base min-h-[56px]"
                 )}
                 disabled={isLoading || isProcessing}
               />
@@ -312,14 +336,19 @@ export function UnifiedChat({
                 isSidebar ? "p-3 h-[48px] w-[48px]" : "p-4 h-[56px] w-[56px]"
               )}
             >
-              {(isLoading || isProcessing) ? (
-                <Loader2 className={cn("animate-spin", isSidebar ? "w-4 h-4" : "w-5 h-5")} />
+              {isLoading || isProcessing ? (
+                <Loader2
+                  className={cn(
+                    "animate-spin",
+                    isSidebar ? "w-4 h-4" : "w-5 h-5"
+                  )}
+                />
               ) : (
                 <Send className={cn(isSidebar ? "w-4 h-4" : "w-5 h-5")} />
               )}
             </Button>
           </div>
-          
+
           {!isSidebar && (
             <div className="flex items-center justify-center mt-4">
               <div className="flex items-center gap-2 px-4 py-2 bg-white/60 backdrop-blur-sm rounded-full border border-gray-200/50">

@@ -2,7 +2,20 @@
 
 import { useUser } from "@clerk/nextjs";
 import { motion } from "framer-motion";
-import { Bell, Search, TrendingUp, Wallet, Settings, BarChart3, Zap, Brain, Target, PiggyBank, TrendingDown, Calculator } from "lucide-react";
+import {
+  Bell,
+  Search,
+  TrendingUp,
+  Wallet,
+  Settings,
+  BarChart3,
+  Zap,
+  Brain,
+  Target,
+  PiggyBank,
+  TrendingDown,
+  Calculator,
+} from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
@@ -30,44 +43,53 @@ export function ModernDashboardHeader({
   const { openChat } = useRightSidebar();
 
   // AI Smart Suggestions - Random useful suggestions with descriptive phrases and subtle colors
-  const aiSuggestions = useMemo(() => [
-    {
-      icon: Brain,
-      text: "Analyze my spending patterns this month",
-      color: "from-purple-300 to-violet-400",
-      fullQuestion: "Analyze my spending patterns over the last month. What categories am I spending the most on? Are there any unusual transactions or patterns I should be aware of? Give me actionable insights to optimize my budget."
-    },
-    {
-      icon: Target,
-      text: "Help me optimize my budget better",
-      color: "from-blue-300 to-cyan-400",
-      fullQuestion: "Help me optimize my budget for this month. Analyze my income vs expenses, identify areas where I can cut costs, and suggest realistic savings goals based on my financial data."
-    },
-    {
-      icon: TrendingUp,
-      text: "Show me my financial health score",
-      color: "from-emerald-300 to-green-400",
-      fullQuestion: "Calculate my financial health score. Analyze my savings rate, spending habits, cash flow, and debt-to-income ratio. What are the main factors affecting my score and how can I improve it?"
-    },
-    {
-      icon: PiggyBank,
-      text: "Give me personalized saving tips",
-      color: "from-amber-300 to-orange-400",
-      fullQuestion: "Based on my spending habits and income, suggest personalized saving strategies. What automated savings plans would work best for me? How can I increase my savings rate without affecting my lifestyle?"
-    },
-    {
-      icon: Calculator,
-      text: "Review my expense categories",
-      color: "from-rose-300 to-pink-400",
-      fullQuestion: "Review my expense categories and transactions. Are there any recurring subscriptions I might have forgotten? Any duplicate expenses or categories that could be consolidated? Help me clean up my financial tracking."
-    },
-    {
-      icon: Zap,
-      text: "What can I improve right now?",
-      color: "from-violet-300 to-purple-400",
-      fullQuestion: "Give me 3-5 quick financial wins I can implement this week based on my current spending data. What are the easiest changes I can make to improve my financial situation immediately?"
-    }
-  ], []);
+  const aiSuggestions = useMemo(
+    () => [
+      {
+        icon: Brain,
+        text: "Analyze my spending patterns this month",
+        color: "from-purple-300 to-violet-400",
+        fullQuestion:
+          "Analyze my spending patterns over the last month. What categories am I spending the most on? Are there any unusual transactions or patterns I should be aware of? Give me actionable insights to optimize my budget.",
+      },
+      {
+        icon: Target,
+        text: "Help me optimize my budget better",
+        color: "from-blue-300 to-cyan-400",
+        fullQuestion:
+          "Help me optimize my budget for this month. Analyze my income vs expenses, identify areas where I can cut costs, and suggest realistic savings goals based on my financial data.",
+      },
+      {
+        icon: TrendingUp,
+        text: "Show me my financial health score",
+        color: "from-emerald-300 to-green-400",
+        fullQuestion:
+          "Calculate my financial health score. Analyze my savings rate, spending habits, cash flow, and debt-to-income ratio. What are the main factors affecting my score and how can I improve it?",
+      },
+      {
+        icon: PiggyBank,
+        text: "Give me personalized saving tips",
+        color: "from-amber-300 to-orange-400",
+        fullQuestion:
+          "Based on my spending habits and income, suggest personalized saving strategies. What automated savings plans would work best for me? How can I increase my savings rate without affecting my lifestyle?",
+      },
+      {
+        icon: Calculator,
+        text: "Review my expense categories",
+        color: "from-rose-300 to-pink-400",
+        fullQuestion:
+          "Review my expense categories and transactions. Are there any recurring subscriptions I might have forgotten? Any duplicate expenses or categories that could be consolidated? Help me clean up my financial tracking.",
+      },
+      {
+        icon: Zap,
+        text: "What can I improve right now?",
+        color: "from-violet-300 to-purple-400",
+        fullQuestion:
+          "Give me 3-5 quick financial wins I can implement this week based on my current spending data. What are the easiest changes I can make to improve my financial situation immediately?",
+      },
+    ],
+    []
+  );
 
   // Select a random suggestion each time the component mounts
   const aiAction = useMemo(() => {
@@ -166,16 +188,17 @@ export function ModernDashboardHeader({
                 whileTap={{ scale: 0.98 }}
                 onClick={handleAIAction}
                 className={`
-                  h-11 px-4 text-sm flex items-center gap-2 bg-white/80 backdrop-blur-sm
-                  border border-purple-200 rounded-lg hover:bg-purple-50 hover:border-purple-300
-                  shadow-sm transition-all duration-200 cursor-pointer group
-                  bg-gradient-to-r ${aiAction.color} text-white border-white/20 hover:shadow-lg
+                  h-11 px-4 text-sm flex items-center gap-2 
+                  rounded-lg transition-all duration-200 cursor-pointer group
+                  bg-gradient-to-r from-purple-600 to-indigo-700 text-white 
+                  border border-purple-700/20 shadow-md hover:shadow-lg
+                  hover:from-purple-700 hover:to-indigo-800
                   whitespace-nowrap
                 `}
               >
                 <aiAction.icon className="w-4 h-4 flex-shrink-0" />
                 <span className="font-medium text-sm">{aiAction.text}</span>
-                <div className="w-2 h-2 bg-white/30 rounded-full animate-pulse flex-shrink-0" />
+                <div className="w-2 h-2 bg-white/50 rounded-full animate-pulse flex-shrink-0" />
               </motion.button>
             </motion.div>
 

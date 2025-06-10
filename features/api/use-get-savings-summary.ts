@@ -25,7 +25,7 @@ export const useGetSavingsSummary = () => {
       };
     },
     staleTime: 1000 * 60 * 5, // 5 minutos
-    cacheTime: 1000 * 60 * 30, // 30 minutos
+    gcTime: 1000 * 60 * 30, // 30 minutos
     refetchOnWindowFocus: false,
     refetchOnMount: false,
   });

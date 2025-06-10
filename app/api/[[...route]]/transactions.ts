@@ -244,7 +244,7 @@ const app = new Hono()
             }
         })
     .post(
-        "/ -delete",
+        "/bulk-delete",
         clerkMiddleware(),
         zValidator("json", z.object({
             ids: z.array(z.string())

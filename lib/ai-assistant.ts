@@ -67,75 +67,157 @@ export interface AIResponse {
 }
 
 /**
- * Detecta la intención del usuario basada en su pregunta usando análisis más sofisticado
+ * Detecta la intención del usuario a partir de su pregunta
  */
 export function detectIntent(question: string): string {
     const lowerQuestion = question.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
-    // Patrones más sofisticados con puntajes de confianza
+    // Patrones mejorados para detectar intenciones
     const intentPatterns = {
-        overview: {
-            keywords: ['resumen', 'estado', 'general', 'como estoy', 'situacion', 'balance', 'total', 'panorama', 'vision'],
-            phrases: ['como estoy', 'cual es mi situacion', 'dame un resumen', 'estado general', 'como van mis finanzas'],
-            score: 0
-        },
-        transactions: {
-            keywords: ['transacciones', 'gastos', 'movimientos', 'pagos', 'compras', 'gaste', 'pague', 'compre', 'transferencia'],
-            phrases: ['cuanto gaste', 'donde gaste', 'mis ultimas compras', 'mis movimientos', 'que compre'],
-            score: 0
-        },
-        budget: {
-            keywords: ['presupuesto', 'limite', 'cuanto puedo', 'donde gasto mas', 'planificar', 'ahorrar', 'meta'],
-            phrases: ['cuanto puedo gastar', 'donde gasto mas', 'como ahorrar', 'planificar gastos', 'mi presupuesto'],
-            score: 0
-        },
-        analysis: {
-            keywords: ['analisis', 'tendencia', 'comparar', 'patron', 'evolucion', 'historico', 'mes pasado', 'ano pasado'],
-            phrases: ['comparar con', 'tendencia de', 'patron de gastos', 'analizar mis', 'evolucion de'],
-            score: 0
-        },
-        advice: {
-            keywords: ['consejo', 'recomendacion', 'que hago', 'como ahorrar', 'sugerencia', 'ayuda', 'deberia', 'mejor'],
-            phrases: ['que me recomiendas', 'como puedo', 'que deberia', 'dame un consejo', 'como mejorar'],
-            score: 0
-        },
-        prediction: {
-            keywords: ['predecir', 'futuro', 'proyeccion', 'estimacion', 'podre', 'alcanzare', 'cuando'],
-            phrases: ['cuanto tendre', 'podre ahorrar', 'cuando alcanzare', 'proyeccion de', 'en el futuro'],
-            score: 0
-        },
-        alerts: {
-            keywords: ['alerta', 'limite', 'aviso', 'exceso', 'presupuesto superado', 'gasto alto'],
-            phrases: ['he superado', 'gaste mucho', 'alerta de', 'limite superado', 'aviso de gasto'],
-            score: 0
-        }
+        overview: [
+            /como va.*(mis|mi).*finanzas/i,
+            /resum(en|ir|e).*(mis|mi).*finanzas/i,
+            /panorama.*(general|financiero)/i,
+            /salud financiera/i,
+            /como estoy financieramente/i,
+            /vision general/i,
+            /estado general/i,
+            /como voy/i,
+            /mis numeros/i
+        ],
+        transactions: [
+            /transaccion(es)?/i,
+            /gasto(s)?( reciente(s)?)?/i,
+            /movimiento(s)?/i,
+            /compra(s)?( reciente(s)?)?/i,
+            /historial/i,
+            /ultimos movimientos/i,
+            /en que he gastado/i,
+            /pagos/i,
+            /cobros/i
+        ],
+        budget: [
+            /presupuesto/i,
+            /planificacion/i,
+            /plan financiero/i,
+            /cuanto puedo gastar/i,
+            /limite de gasto/i,
+            /distribucion/i,
+            /asignacion/i
+        ],
+        analysis: [
+            /anali(sis|za|zar)/i,
+            /tendencia(s)?/i,
+            /patron(es)?/i,
+            /estadistica(s)?/i,
+            /grafico(s)?/i,
+            /diagrama(s)?/i,
+            /compara(r|cion)/i
+        ],
+        advice: [
+            /consejo(s)?/i,
+            /recomendacion(es)?/i,
+            /sugerencia(s)?/i,
+            /como (puedo|deberia|podria)/i,
+            /que (debo|deberia) hacer/i,
+            /ayuda con/i,
+            /orientacion/i
+        ],
+        prediction: [
+            /predic(ir|cion)/i,
+            /proyect(ar|cion)/i,
+            /futuro/i,
+            /pronostico/i,
+            /estimacion/i,
+            /cuanto tendre/i,
+            /como estare/i
+        ],
+        alerts: [
+            /alerta(s)?/i,
+            /notificacion(es)?/i,
+            /aviso(s)?/i,
+            /advertencia(s)?/i,
+            /problema(s)?/i,
+            /riesgo(s)?/i,
+            /preocupa(r|cion)/i
+        ]
     };
 
-    // Calcular puntajes para cada intención
-    for (const [intent, config] of Object.entries(intentPatterns)) {
-        // Puntaje por palabras clave
-        config.score += config.keywords.filter(keyword => lowerQuestion.includes(keyword)).length * 2;
+    // Patrones específicos para consultas de saldo
+    // Ampliados para cubrir más variaciones en español
+    const balancePatterns = [
+        /\b(saldo|balance|dinero|cuanto tengo)\b/i,
+        /\b(cuenta|cuentas).*\b(saldo|balance|tengo|disponible)\b/i,
+        /\bcuanto.*\b(dinero|saldo|hay)\b/i,
+        /\bdisponible\b/i,
+        /\bcuanto me queda\b/i,
+        /\bver.*\b(saldo|balance|dinero)\b/i,
+        /\b(mi|mis).*\b(saldo|cuenta|dinero)\b/i,
+        /\b(dime|muestra|cual es|diga).*\b(saldo|dinero|balance)\b/i,
+        /\b(tengo).*\b(cuenta|dinero|saldo)\b/i,
+        /\bcuanto.*\b(hay|tengo).*\b(cuenta|saldo|disponible)\b/i,
+        /\bestado de.*\b(cuenta|saldo|finanzas)\b/i,
+        /\bconsulta.*\b(saldo|cuenta|balance)\b/i,
+    ];
 
-        // Puntaje por frases completas (mayor peso)
-        config.score += config.phrases.filter(phrase => lowerQuestion.includes(phrase)).length * 5;
+    // Patrones específicos para gastos mensuales
+    const monthlyExpensesPatterns = [
+        /\bgasto.*\b(mes|mensual)\b/i,
+        /\bcuanto.*\b(gasto|he gastado)\b/i,
+        /\bgastos.*\b(mes|mensual)\b/i,
+        /\ben que.*\b(gasto|he gastado)\b/i,
+        /\bmis gastos\b/i,
+        /\banalisis de gastos\b/i,
+        /\ben que se va.*\b(dinero|saldo)\b/i
+    ];
 
-        // Bonus por contexto específico
-        if (intent === 'transactions' && /\b(en|de|categoria|lugar|tienda)\b/.test(lowerQuestion)) {
-            config.score += 3;
-        }
-        if (intent === 'budget' && /\b(este|mes|semana|dia)\b/.test(lowerQuestion)) {
-            config.score += 3;
-        }
-        if (intent === 'analysis' && /\b(ultimo|pasado|anterior|comparacion)\b/.test(lowerQuestion)) {
-            config.score += 3;
+    // Patrones específicos para transacciones recientes
+    const recentTransactionsPatterns = [
+        /\b(mis|muestra|ver).*\btransacciones\b/i,
+        /\btransacciones recientes\b/i,
+        /\b(ultimos|ultimas|recientes).*\b(movimientos|transacciones|gastos|compras)\b/i,
+        /\b(que|donde).*\b(he comprado|he gastado)\b/i,
+        /\bhistorial.*\b(reciente|transacciones|compras|pagos)\b/i,
+        /\bactividad reciente\b/i,
+        /\bmovimientos.*\b(recientes|ultimos|cuenta)\b/i,
+        /\bver.*\b(transacciones|movimientos|operaciones)\b/i,
+        /\bmostrar.*\b(transacciones|movimientos|operaciones)\b/i,
+        /\ben que.*\b(he gastado|se ha ido el dinero)\b/i
+    ];
+
+    // Verificar patrones específicos primero
+    // Si es una consulta de saldo, asignar intent 'balance' (para respuesta rápida)
+    for (const pattern of balancePatterns) {
+        if (pattern.test(lowerQuestion)) {
+            return 'overview';
         }
     }
 
-    // Encontrar la intención con mayor puntaje
-    const bestIntent = Object.entries(intentPatterns)
-        .sort(([, a], [, b]) => b.score - a.score)[0];
+    // Si es una consulta de gastos mensuales
+    for (const pattern of monthlyExpensesPatterns) {
+        if (pattern.test(lowerQuestion)) {
+            return 'analysis';
+        }
+    }
 
-    return bestIntent[1].score > 0 ? bestIntent[0] : 'general';
+    // Si es una consulta de transacciones recientes
+    for (const pattern of recentTransactionsPatterns) {
+        if (pattern.test(lowerQuestion)) {
+            return 'transactions';
+        }
+    }
+
+    // Para otras intenciones
+    for (const [intent, patterns] of Object.entries(intentPatterns)) {
+        for (const pattern of patterns) {
+            if (pattern.test(lowerQuestion)) {
+                return intent;
+            }
+        }
+    }
+
+    // Intención por defecto
+    return 'general';
 }
 
 /**
@@ -192,22 +274,155 @@ function generateQuickResponse(question: string, context: UserFinancialContext, 
         // Saludos simples
         'saludo': () => {
             return {
-                text: `Hello! 👋 I'm your personal financial assistant.
+                text: `¡Hola! 👋 Soy tu asistente financiero personal.
 
-How can I help you today? I can analyze your spending, give you savings advice, or answer any questions about your finances.`,
-                suggestions: ['What is my balance?', 'How much have I spent this month?', 'How is my financial health?', 'Give me savings tips'],
+¿En qué puedo ayudarte hoy? Puedo analizar tus gastos, darte consejos de ahorro o responder cualquier pregunta sobre tus finanzas.`,
+                suggestions: ['¿Cuál es mi saldo?', '¿Cuánto he gastado este mes?', '¿Cómo está mi salud financiera?', 'Dame consejos de ahorro'],
             };
         },
 
         // Balance y dinero disponible
         'balance': () => {
             const totalBalance = quickAnalysis.getTotalBalance(context);
-            return {
-                text: `Your current total balance is €${totalBalance.toLocaleString()}.
+            const accounts = context.accounts;
+            const hasAccounts = accounts.length > 0;
 
-${totalBalance > context.yearlyStats.averageMonthlySpending ?
-                        'You have a good reserve! 💪' : 'I recommend working on building your emergency fund. 📈'}`,
-                suggestions: ['How can I increase my balance?', 'How much do I spend per month?', 'Give me savings advice'],
+            if (!hasAccounts) {
+                return {
+                    text: `Aún no tienes cuentas conectadas. Para ver tu saldo, primero necesitas conectar al menos una cuenta bancaria.
+                    
+¿Te gustaría que te ayude a configurar una cuenta?`,
+                    suggestions: ['¿Cómo conectar mi cuenta bancaria?', 'Configurar una nueva cuenta', 'Ver tutorial de conexión'],
+                };
+            }
+
+            // Detalles de saldos individuales
+            const accountDetails = accounts.map(acc =>
+                `• ${acc.name}: ${acc.balance !== undefined ? acc.balance.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' }) : "Sin datos"}`
+            ).join('\n');
+
+            const savingsRate = context.yearlyStats.savingsRate;
+            const monthlyExpenses = context.monthlyStats.expenses;
+
+            // Análisis contextual del saldo
+            let analysis = '';
+            if (totalBalance <= 0) {
+                analysis = 'Tu saldo está en números rojos. Es urgente revisar tus gastos. 🚨';
+            } else if (totalBalance < monthlyExpenses * 0.5) {
+                analysis = 'Tu saldo está por debajo del 50% de tus gastos mensuales. Ten cuidado con tus próximos gastos. ⚠️';
+            } else if (totalBalance < monthlyExpenses) {
+                analysis = 'Tu saldo cubre menos de un mes de gastos. Considera reducir gastos no esenciales. 📉';
+            } else if (totalBalance < monthlyExpenses * 3) {
+                analysis = 'Tu saldo es razonable, pero sería ideal aumentarlo para tener un fondo de emergencia más sólido. 📊';
+            } else {
+                analysis = 'Tienes un buen fondo de emergencia. ¡Excelente trabajo! 💪';
+            }
+
+            return {
+                text: `Tu saldo total actual es ${totalBalance.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}.
+
+Desglose por cuenta:
+${accountDetails}
+
+${analysis}`,
+                suggestions: ['¿Cómo puedo aumentar mi saldo?', '¿Cuánto gasto al mes?', 'Dame consejos de ahorro', 'Analiza mis finanzas'],
+            };
+        },
+
+        // Transacciones recientes
+        'transacciones_recientes': () => {
+            const { recentTransactions } = context;
+
+            if (!recentTransactions || recentTransactions.length === 0) {
+                return {
+                    text: `No he encontrado transacciones recientes en tu cuenta. 
+
+Esto puede deberse a que:
+• Aún no tienes transacciones registradas
+• Necesitas sincronizar tus cuentas bancarias
+• Ha habido un problema al recuperar los datos
+
+¿Quieres que te ayude a configurar la conexión con tu banco?`,
+                    suggestions: ['Sincronizar cuentas', 'Conectar banco', 'Ver tutorial de conexión'],
+                };
+            }
+
+            // Formatear fecha para visualización
+            const formatDate = (dateStr: string) => {
+                const date = new Date(dateStr);
+                return date.toLocaleDateString('es-ES', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: '2-digit'
+                });
+            };
+
+            // Obtener las 5 transacciones más recientes
+            const latestTransactions = [...recentTransactions]
+                .filter(tx => typeof tx.amount === 'number' && !isNaN(tx.amount))
+                .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                .slice(0, 5);
+
+            // Si no hay transacciones válidas después del filtrado
+            if (latestTransactions.length === 0) {
+                return {
+                    text: `No he encontrado transacciones recientes con datos válidos.
+                    
+Esto puede ser un problema técnico. ¿Quieres intentar sincronizar tus cuentas nuevamente?`,
+                    suggestions: ['Sincronizar cuentas', 'Revisar conexión bancaria', 'Ver todas las transacciones'],
+                };
+            }
+
+            // Construir la lista formateada de transacciones
+            const transactionItems = latestTransactions.map(tx => {
+                const amount = Number(tx.amount);
+                const amountFormatted = amount.toLocaleString('es-ES', {
+                    style: 'currency',
+                    currency: 'EUR',
+                    minimumFractionDigits: 2
+                });
+
+                return `• ${formatDate(tx.date)} | ${tx.payee} | ${amountFormatted} | ${tx.category || 'Sin categoría'}`;
+            }).join('\n');
+
+            // Estadísticas básicas
+            const positiveTransactions = latestTransactions.filter(tx => Number(tx.amount) > 0);
+            const negativeTransactions = latestTransactions.filter(tx => Number(tx.amount) < 0);
+            const positiveCount = positiveTransactions.length;
+            const negativeCount = negativeTransactions.length;
+
+            // Calcular balance (ingresos - gastos)
+            let balance = 0;
+            for (let i = 0; i < latestTransactions.length; i++) {
+                const val = Number(latestTransactions[i].amount);
+                if (!isNaN(val)) {
+                    balance = balance + val;
+                }
+            }
+
+            // Texto de análisis
+            let insightText = '';
+            if (negativeCount > positiveCount) {
+                insightText = 'La mayoría de tus movimientos recientes son gastos.';
+            } else if (positiveCount > negativeCount) {
+                insightText = 'La mayoría de tus movimientos recientes son ingresos.';
+            }
+
+            return {
+                text: `## Tus transacciones más recientes 📊
+
+${transactionItems}
+
+${insightText ? insightText + ' ' : ''}${balance >= 0 ? '¡Tu balance de transacciones recientes es positivo! 👍' : 'Tu balance de transacciones recientes es negativo. Considera revisar tus gastos. ⚠️'}
+
+¿Quieres ver más detalles o analizar algún aspecto específico?`,
+                suggestions: ['Analiza mis patrones de gasto', 'Muestra transacciones por categoría', 'Busca gastos recurrentes', 'Compara con el mes pasado'],
+                data: {
+                    transactions: latestTransactions,
+                    balance,
+                    positiveCount,
+                    negativeCount
+                }
             };
         },
 
@@ -218,10 +433,10 @@ ${totalBalance > context.yearlyStats.averageMonthlySpending ?
             const ratio = income > 0 ? (expenses / income * 100).toFixed(1) : 0;
 
             return {
-                text: `This month you've spent €${expenses.toLocaleString()}.
+                text: `Este mes has gastado ${expenses.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}.
 
-This represents ${ratio}% of your income. ${Number(ratio) < 80 ? 'Excellent control! 👏' : Number(ratio) < 90 ? 'Moderate spending 👍' : 'Consider reducing some expenses ⚠️'}`,
-                suggestions: ['Which category do I spend most on?', 'How can I reduce expenses?', 'Show me my spending by category'],
+Esto representa el ${ratio}% de tus ingresos. ${Number(ratio) < 80 ? '¡Excelente control! 👏' : Number(ratio) < 90 ? 'Gasto moderado 👍' : 'Considera reducir algunos gastos ⚠️'}`,
+                suggestions: ['¿En qué categoría gasto más?', '¿Cómo puedo reducir gastos?', 'Muéstrame mis gastos por categoría'],
             };
         },
 
@@ -230,16 +445,16 @@ This represents ${ratio}% of your income. ${Number(ratio) < 80 ? 'Excellent cont
             const topCategory = context.monthlyStats.topCategories[0];
             if (!topCategory) {
                 return {
-                    text: 'I don\'t have enough information about your spending by category.',
-                    suggestions: ['Add some transactions', 'Categorize your expenses'],
+                    text: 'No tengo suficiente información sobre tus gastos por categoría.',
+                    suggestions: ['Añade algunas transacciones', 'Categoriza tus gastos'],
                 };
             }
 
             return {
-                text: `Your highest spending category is "${topCategory.name}" with €${topCategory.amount.toLocaleString()}.
+                text: `Tu categoría de mayor gasto es "${topCategory.name}" con ${topCategory.amount.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' })}.
 
-This represents ${topCategory.percentage.toFixed(1)}% of your total expenses.`,
-                suggestions: [`How to reduce ${topCategory.name} expenses?`, 'Analyze all my categories', 'Give me budgeting advice'],
+Esto representa el ${topCategory.percentage.toFixed(1)}% de tus gastos totales.`,
+                suggestions: [`¿Cómo reducir gastos en ${topCategory.name}?`, 'Analiza todas mis categorías', 'Dame consejos de presupuesto'],
             };
         },
 
@@ -248,10 +463,12 @@ This represents ${topCategory.percentage.toFixed(1)}% of your total expenses.`,
             const savingsRate = context.yearlyStats.savingsRate;
 
             return {
-                text: `Your current savings rate is ${savingsRate.toFixed(1)}%.
+                text: `Tu tasa de ahorro actual es del ${savingsRate.toFixed(1)}% de tus ingresos.
 
-${savingsRate >= 20 ? 'Excellent! 🎉' : savingsRate >= 15 ? 'Very good! 👍' : savingsRate >= 10 ? 'You can improve 📈' : 'I recommend increasing your savings ⚠️'}`,
-                suggestions: ['How to increase my savings?', 'Strategies to save more', 'Give me personalized advice'],
+${savingsRate >= 20 ? '¡Excelente trabajo! Estás ahorrando por encima de lo recomendado. 🌟' :
+                        savingsRate >= 10 ? 'Estás ahorrando a un buen ritmo. Intenta aumentarlo gradualmente. 👍' :
+                            'Te recomiendo aumentar tu tasa de ahorro. Un objetivo saludable es al menos 15-20%. 📊'}`,
+                suggestions: ['¿Cómo puedo ahorrar más?', 'Crea un plan de ahorro', 'Analiza mis gastos innecesarios'],
             };
         },
 
@@ -260,36 +477,35 @@ ${savingsRate >= 20 ? 'Excellent! 🎉' : savingsRate >= 15 ? 'Very good! 👍' 
             const healthScore = quickAnalysis.getFinancialHealthScore(context);
 
             return {
-                text: `Your financial health score is ${healthScore.score}/100 - "${healthScore.level}" level.
+                text: `Tu puntuación de salud financiera es de ${healthScore.score}/100 - nivel "${healthScore.level}".
 
-${healthScore.score >= 80 ? 'Excellent work! 🎉' : healthScore.score >= 60 ? 'You\'re on the right track 👍' : healthScore.score >= 40 ? 'There\'s room for improvement 💪' : 'It\'s time to take action 🚀'}
+${healthScore.score >= 80 ? '¡Excelente trabajo! Estás en una posición financiera sólida. 🎉' :
+                        healthScore.score >= 60 ? 'Vas por buen camino. Sigue trabajando en mejorar tus finanzas. 👍' :
+                            healthScore.score >= 40 ? 'Hay margen de mejora. Puedo ayudarte a fortalecerte financieramente. 💪' :
+                                'Es momento de tomar acción para mejorar tu situación financiera. 🚀'}
 
-Would you like me to analyze any specific aspect?`,
-                suggestions: ['How to improve my score?', 'Analyze my expenses', 'Give me an improvement plan'],
+¿Te gustaría que analice algún aspecto específico?`,
+                suggestions: ['¿Cómo mejorar mi puntuación?', 'Analiza mis gastos', 'Dame un plan de mejora'],
             };
         }
     };
 
-    // Detectar consultas que pueden responderse rápidamente
-    const patterns = {
-        saludo: /\b(hola|hey|buenas|buenos|saludos|que tal)\b/,
-        balance: /\b(balance|saldo|dinero|cuanto tengo|total|disponible)\b/,
-        gastos_mes: /\b(gast[oé]|este mes|gastos mensuales|cuanto gast[eé])\b/,
-        categoria_mayor: /\b(categoria|categor[íi]a|donde gasto|mayor gasto|mas gasto)\b/,
-        ahorro: /\b(ahorro|ahorrar|tasa de ahorro|cuanto ahorro)\b/,
-        salud_financiera: /\b(salud|puntuacion|score|como estoy|situacion)\b/
-    };
-
-    for (const [type, pattern] of Object.entries(patterns)) {
-        if (pattern.test(lowerQuestion) && quickResponses[type]) {
-            const response = quickResponses[type]();
-            response.suggestions = generateSuggestions(intent, context).slice(0, 4);
-            response.actions = generateActionSuggestions(intent, context).slice(0, 3);
-            return response;
-        }
+    // Mapeo de intenciones a respuestas rápidas
+    if (intent === 'overview') {
+        return quickResponses.balance();
     }
 
-    return null; // No hay respuesta rápida disponible
+    if (intent === 'transactions') {
+        return quickResponses.transacciones_recientes();
+    }
+
+    // Patrones básicos para saludos
+    if (/^hola|^saludos|^buenos dias|^buenas tardes|^buenas noches/i.test(lowerQuestion)) {
+        return quickResponses.saludo();
+    }
+
+    // No se encontró una respuesta rápida adecuada
+    return null;
 }
 
 /**
@@ -297,57 +513,114 @@ Would you like me to analyze any specific aspect?`,
  */
 function buildContextualPrompt(question: string, context: UserFinancialContext, intent: string): string {
     const { accounts, recentTransactions, categories, monthlyStats, yearlyStats } = context;
-    
-    let prompt = `You are a friendly and professional personal financial assistant.
 
-INSTRUCTIONS FOR RESPONSE FORMAT:
-- Always respond in English
-- Keep responses VERY SHORT (maximum 2-3 short paragraphs)
-- Use **bold text** for important numbers and key points
-- Use bullet points (•) for ALL lists - never use numbers or numbered lists
-- Include 1-2 relevant emojis maximum
-- Be direct and concise
-- End with a brief follow-up question
+    // Formatear montos con formato español
+    const formatCurrency = (amount: number) => amount.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
+    const totalBalance = formatCurrency(accounts.reduce((sum, acc) => sum + (acc.balance || 0), 0));
+    const monthlyExpenses = formatCurrency(monthlyStats.expenses);
+    const monthlyIncome = formatCurrency(monthlyStats.income);
 
-CONTENT REQUIREMENTS:
-- Maximum 150 words total
-- Focus on 1-2 key insights only
-- Be extremely concise and actionable
-- Skip lengthy explanations
+    // Análisis financiero adicional para contexto enriquecido
+    const topCategory = monthlyStats.topCategories[0]?.name || "Sin datos";
+    const topCategoryAmount = monthlyStats.topCategories[0]?.amount || 0;
+    const topCategoryPercentage = monthlyStats.topCategories[0]?.percentage || 0;
 
-User asks: "${question}"
+    const hasNegativeBalance = accounts.reduce((sum, acc) => sum + (acc.balance || 0), 0) <= 0;
+    const hasLowSavings = yearlyStats.savingsRate < 10;
+    const hasSufficientEmergencyFund = accounts.reduce((sum, acc) => sum + (acc.balance || 0), 0) > yearlyStats.averageMonthlySpending * 3;
 
-USER'S FINANCIAL DATA:
-Total Balance: €${accounts.reduce((sum, acc) => sum + (acc.balance || 0), 0).toLocaleString()}
-Monthly Expenses: €${monthlyStats.expenses.toLocaleString()}
-Monthly Income: €${monthlyStats.income.toLocaleString()}
-Savings Rate: ${yearlyStats.savingsRate.toFixed(1)}%
+    // Detectar situaciones financieras especiales
+    let financialSituation = "normal";
+    if (hasNegativeBalance) {
+        financialSituation = "crítica";
+    } else if (hasLowSavings && !hasSufficientEmergencyFund) {
+        financialSituation = "vulnerable";
+    } else if (hasSufficientEmergencyFund && yearlyStats.savingsRate > 20) {
+        financialSituation = "excelente";
+    } else if (yearlyStats.savingsRate > 15 || hasSufficientEmergencyFund) {
+        financialSituation = "buena";
+    }
 
-${monthlyStats.topCategories.length > 0 ? `Top Spending Categories:
-${monthlyStats.topCategories.slice(0, 3).map(cat => `- ${cat.name}: €${cat.amount.toLocaleString()}`).join('\n')}` : ''}
+    let prompt = `Eres un asistente financiero personal amigable y profesional con pensamiento avanzado independiente.
 
-EXAMPLE RESPONSE FORMAT:
-## Financial Overview 📊
+INSTRUCCIONES PARA EL FORMATO DE RESPUESTA:
+- SIEMPRE responde en ESPAÑOL
+- Mantén las respuestas MUY CORTAS (máximo 2-3 párrafos breves)
+- Usa **texto en negrita** para números importantes y puntos clave
+- Usa viñetas (•) para TODAS las listas - nunca uses números o listas numeradas
+- Incluye 1-2 emojis relevantes como máximo
+- Sé directo y conciso
+- Termina con una breve pregunta de seguimiento
+- SIEMPRE dirígete al usuario con "tú" (forma informal), no uses "usted"
 
-Your balance is €5,500 with €2,200 spent this month. Your 15.2% savings rate is excellent! 💪
+INSTRUCCIONES DE PENSAMIENTO AUTÓNOMO:
+- SIEMPRE analiza el contexto financiero real del usuario y extrae conclusiones por ti mismo
+- NO recites datos sin analizarlos - interpreta lo que significan para la situación financiera del usuario
+- Si una pregunta es ambigua, haz tu mejor interpretación basada en el contexto
+- Cuando te pregunten por el saldo, revisa detalladamente los datos de las cuentas - nunca respondas con valores predeterminados
+- Si no hay cuentas conectadas, indícalo claramente y sugiere conectar cuentas
+- Muestra pensamiento crítico: considera diferentes aspectos de la situación financiera
+- Si detectas problemas financieros, señálalos de manera constructiva
+- Responde basándote en datos reales, no en suposiciones
 
-Top insights:
-• Groceries take 29.5% of expenses (€650)
-• Monthly surplus of €800 available
+REQUISITOS DE CONTENIDO:
+- Máximo 150 palabras en total
+- Céntrate solo en 1-2 ideas clave
+- Sé extremadamente conciso y práctico
+- Omite explicaciones extensas
+- Personaliza TODOS los consejos según los datos financieros reales del usuario
 
-Quick win: Reduce grocery spending by 10% to boost savings further.
+El usuario pregunta: "${question}"
 
-What area should we focus on next?
+PERFIL FINANCIERO DEL USUARIO:
+Situación financiera general: ${financialSituation}
+Saldo Total: ${totalBalance}
+Número de cuentas: ${accounts.length}
+Gastos Mensuales: ${monthlyExpenses}
+Ingresos Mensuales: ${monthlyIncome}
+Tasa de Ahorro: ${yearlyStats.savingsRate.toFixed(1)}%
+Principal categoría de gasto: ${topCategory} (${formatCurrency(topCategoryAmount)}, ${topCategoryPercentage.toFixed(1)}%)
+Fondo de emergencia: ${hasSufficientEmergencyFund ? "Suficiente" : "Insuficiente"}
 
-RESPONSE REQUIREMENTS:
-- Follow the example format structure above
-- Maximum 4-5 short paragraphs with clear sections
-- Include relevant user data with **bold formatting**
-- Use numbered lists for steps and bullet points for tips
-- Use appropriate emojis throughout
-- Be friendly but professional
-- End with a helpful follow-up question
-- Provide actionable insights when possible`;
+${accounts.length > 0 ? `DETALLE DE CUENTAS:
+${accounts.map(acc => `- ${acc.name}: ${acc.balance !== undefined ? formatCurrency(acc.balance) : "Sin datos"}`).join('\n')}` : "NO HAY CUENTAS CONECTADAS"}
+
+${monthlyStats.topCategories.length > 0 ? `PRINCIPALES CATEGORÍAS DE GASTO:
+${monthlyStats.topCategories.slice(0, 3).map(cat => `- ${cat.name}: ${formatCurrency(cat.amount)} (${cat.percentage.toFixed(1)}%)`).join('\n')}` : ''}
+
+${recentTransactions.length > 0 ? `TRANSACCIONES RECIENTES:
+${recentTransactions.slice(0, 3).map(tx => `- ${tx.payee}: ${formatCurrency(tx.amount)} (${new Date(tx.date).toLocaleDateString('es-ES')})`).join('\n')}` : ''}
+
+ANÁLISIS FINANCIERO ACTUAL:
+- Balance mensual: ${monthlyStats.balance >= 0 ? "Positivo" : "Negativo"} (${formatCurrency(monthlyStats.balance)})
+- Gasto en categoría principal: ${topCategoryPercentage > 35 ? "Excesivamente alto" : topCategoryPercentage > 25 ? "Alto" : "Normal"}
+- Diversificación de gastos: ${monthlyStats.topCategories.length > 5 ? "Buena" : monthlyStats.topCategories.length > 3 ? "Regular" : "Limitada"}
+- Ahorro mensual: ${typeof monthlyIncome === 'number' && monthlyIncome > 0 ? (monthlyStats.balance > monthlyIncome * 0.2 ? "Excelente" : monthlyStats.balance > 0 ? "Presente pero mejorable" : "Inexistente") : (monthlyStats.balance > 0 ? "Presente" : "Inexistente")}
+- Número de transacciones recientes: ${recentTransactions.length}
+
+FORMATO DE RESPUESTA DE EJEMPLO:
+## Resumen Financiero 📊
+
+Tu saldo es de **${totalBalance}** con **${monthlyExpenses}** gastados este mes. Tu tasa de ahorro del **${yearlyStats.savingsRate.toFixed(1)}%** es excelente. 💪
+
+Principales conclusiones:
+• Alimentación representa el 29,5% de tus gastos (**650€**)
+• Tienes un superávit mensual de **800€** disponible
+
+Consejo rápido: Reduce el gasto en alimentación un 10% para aumentar aún más tus ahorros.
+
+¿En qué área quieres que nos centremos ahora?
+
+REQUISITOS DE RESPUESTA:
+- Sigue la estructura del formato de ejemplo anterior
+- Máximo 4-5 párrafos cortos con secciones claras
+- Incluye datos relevantes del usuario con **formato en negrita**
+- Usa viñetas para consejos y listas
+- Usa emojis apropiados
+- Sé amigable pero profesional
+- Termina con una pregunta de seguimiento útil
+- Proporciona consejos prácticos cuando sea posible
+- SIEMPRE usa el formato de moneda español (€)`;
 
     return prompt;
 }
@@ -827,7 +1100,34 @@ function generateActionSuggestions(intent: string, context: UserFinancialContext
  */
 export const quickAnalysis = {
     getTotalBalance: (context: UserFinancialContext): number => {
-        return context.accounts.reduce((sum, acc) => sum + (acc.balance || 0), 0);
+        // Verificar si el contexto y las cuentas existen
+        if (!context || !context.accounts || !Array.isArray(context.accounts)) {
+            console.warn('Contexto de usuario inválido o sin cuentas al consultar saldo');
+            return 0;
+        }
+
+        // Verificar si hay cuentas disponibles
+        if (context.accounts.length === 0) {
+            console.log('El usuario no tiene cuentas conectadas');
+            return 0;
+        }
+
+        // Calcular el saldo total solo de cuentas con balance definido
+        let total = 0;
+        let accountsWithBalance = 0;
+
+        for (const account of context.accounts) {
+            // Solo considerar balances que sean números válidos
+            if (account && account.balance !== undefined && !isNaN(account.balance)) {
+                total += account.balance;
+                accountsWithBalance++;
+            }
+        }
+
+        // Log para depuración
+        console.log(`Saldo total calculado: ${total} de ${accountsWithBalance}/${context.accounts.length} cuentas con datos válidos`);
+
+        return total;
     },
 
     getTopSpendingCategory: (context: UserFinancialContext): string => {

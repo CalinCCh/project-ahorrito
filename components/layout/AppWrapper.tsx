@@ -154,29 +154,21 @@ const LoadingFallback = memo(function LoadingFallback() {
   );
 });
 
-// Page transition variants
+// Page transition variants - Optimizado para rendimiento
 const pageVariants = {
   initial: {
     opacity: 0,
-    y: 20,
-    scale: 0.95,
   },
   animate: {
     opacity: 1,
-    y: 0,
-    scale: 1,
     transition: {
-      duration: 0.3,
-      ease: [0.25, 0.46, 0.45, 0.94],
+      duration: 0.2,
     },
   },
   exit: {
     opacity: 0,
-    y: -20,
-    scale: 1.05,
     transition: {
-      duration: 0.2,
-      ease: [0.25, 0.46, 0.45, 0.94],
+      duration: 0.1,
     },
   },
 };
@@ -192,46 +184,33 @@ export const AppWrapper = memo<AppWrapperProps>(function AppWrapper({
   const ahorrito = useAhorritoPage(pageName);
 
   // Memoize wrapper class names
-  const wrapperClassName = useMemo(
-    () => {
-      // Páginas sin scroll
-      const noScrollPages = ["Transactions", "Accounts"];
-      const needsNoScroll = noScrollPages.includes(pageName);
-      const heightClass = needsNoScroll ? "h-screen overflow-hidden" : "min-h-screen";
-      return `${heightClass} bg-gradient-to-br from-slate-50 to-slate-100 ${className}`.trim();
-    },
-    [className, pageName]
-  );
+  const wrapperClassName = useMemo(() => {
+    // Páginas sin scroll
+    const noScrollPages = ["Transactions", "Accounts"];
+    const needsNoScroll = noScrollPages.includes(pageName);
+    const heightClass = needsNoScroll
+      ? "h-screen overflow-hidden"
+      : "min-h-screen";
+    return `${heightClass} bg-gradient-to-br from-slate-50 to-slate-100 ${className}`.trim();
+  }, [className, pageName]);
 
   // Memoize content wrapper props
-  const contentProps = useMemo(
-    () => {
-      // Páginas sin scroll
-      const noScrollPages = ["Transactions", "Accounts"];
-      const needsNoScroll = noScrollPages.includes(pageName);
-      const heightClass = needsNoScroll ? "h-full overflow-hidden" : "min-h-full";
-      return {
-        className: `w-full ${heightClass}`,
-        "data-page": pageName,
-        "aria-label": `${pageName} page content`,
-      };
-    },
-    [pageName]
-  );
+  const contentProps = useMemo(() => {
+    // Páginas sin scroll
+    const noScrollPages = ["Transactions", "Accounts"];
+    const needsNoScroll = noScrollPages.includes(pageName);
+    const heightClass = needsNoScroll ? "h-full overflow-hidden" : "min-h-full";
+    return {
+      className: `w-full ${heightClass}`,
+      "data-page": pageName,
+      "aria-label": `${pageName} page content`,
+    };
+  }, [pageName]);
 
-  // Log page initialization
-  useEffect(() => {
-    if (ahorrito.isInitialized) {
-      console.log(`📄 Page "${pageName}" initialized with Ahorrito features`);
-      ahorrito.logComponentRender();
-    }
-  }, [ahorrito.isInitialized, pageName, ahorrito.logComponentRender]);
   // Error boundary configuration
   const errorBoundaryConfig = useMemo(
     () => ({
       onError: (error: Error, errorInfo: any) => {
-        console.error("🚨 Application error:", error, errorInfo);
-
         // Log to external service in production
         if (process.env.NODE_ENV === "production") {
           // Replace with your error tracking service
@@ -247,7 +226,6 @@ export const AppWrapper = memo<AppWrapperProps>(function AppWrapper({
         }
       },
       onReset: () => {
-        console.log("🔄 Error boundary reset");
         if (ahorrito.isInitialized) {
           ahorrito.announceToScreenReader("Application reset successfully");
         }
@@ -265,7 +243,7 @@ export const AppWrapper = memo<AppWrapperProps>(function AppWrapper({
     return (
       <CustomErrorBoundary {...errorBoundaryConfig}>
         <div className={wrapperClassName}>
-          <AnimatePresence mode="wait">
+          <AnimatePresence mode="sync">
             <motion.div
               key={pageName}
               variants={pageVariants}

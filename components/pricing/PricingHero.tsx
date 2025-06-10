@@ -154,16 +154,7 @@ export function PricingHero() {
                 <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-6 border border-slate-200/50 shadow-xl group-hover:shadow-2xl transition-all duration-300">
                   <div className="text-3xl sm:text-4xl font-bold mb-2">
                     <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                      {inView ? (
-                        <CountUp
-                          end={stat.number}
-                          duration={2}
-                          delay={1.2 + index * 0.1}
-                          decimals={stat.number % 1 !== 0 ? 1 : 0}
-                        />
-                      ) : (
-                        "0"
-                      )}
+                      {inView ? <CountUp end={stat.number} /> : "0"}
                       {stat.suffix}
                     </span>
                   </div>

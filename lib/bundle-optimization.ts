@@ -222,7 +222,7 @@ export const MemoryOptimization = {
 
     // Debounced cleanup for frequent operations
     createDebouncedCleanup: (cleanup: () => void, delay = 300): (() => void) => {
-        let timeoutId: NodeJS.Timeout;
+        let timeoutId: ReturnType<typeof setTimeout>;
 
         return () => {
             clearTimeout(timeoutId);

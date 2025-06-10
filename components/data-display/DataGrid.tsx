@@ -374,7 +374,7 @@ export const DataGrid = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.3 }}
-          className="h-108"
+          className="h-full min-h-[400px]"
         >
           <Card className="h-full relative overflow-hidden bg-gradient-to-br from-purple-50/90 via-white/95 to-violet-50/90 backdrop-blur-xl border border-purple-200/60 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.01] group rounded-xl">
             <div className="absolute inset-0 bg-gradient-to-br from-purple-50/30 via-white/20 to-transparent opacity-50 group-hover:opacity-70 transition-opacity duration-300" />
@@ -392,11 +392,11 @@ export const DataGrid = () => {
                   </div>
                 </div>
 
-                {/* LAYOUT HORIZONTAL: Chart izquierda, Filas derecha */}
-                <div className="flex-1 flex p-4 gap-4 relative">
-                  {/* CHART A LA IZQUIERDA - MÁS GRANDE Y CON HOVER */}
-                  <div className="w-1/2 flex items-center justify-center">
-                    <div className="w-full h-full max-w-[280px] max-h-[280px]">
+                {/* LAYOUT HORIZONTAL en desktop, VERTICAL en móvil */}
+                <div className="flex-1 flex flex-col lg:flex-row p-4 gap-4 relative">
+                  {/* CHART - Centrado en móvil, a la izquierda en desktop */}
+                  <div className="w-full lg:w-1/2 flex items-center justify-center mb-4 lg:mb-0">
+                    <div className="w-full h-[200px] lg:h-full max-w-[280px] max-h-[280px]">
                       <ResponsiveContainer width="100%" height="100%">
                         <RechartsPieChart>
                           <Pie
@@ -435,11 +435,11 @@ export const DataGrid = () => {
                                   0
                                 );
                                 const percentage = (
-                                  (data.value / totalValue) *
+                                  ((data.value as number) / totalValue) *
                                   100
                                 ).toFixed(1);
                                 const formattedAmount = formatCurrency(
-                                  data.value / 100,
+                                  data.value as number,
                                   "EUR"
                                 );
 
@@ -481,8 +481,8 @@ export const DataGrid = () => {
                     </div>
                   </div>
 
-                  {/* FILAS A LA DERECHA */}
-                  <div className="w-1/2 flex flex-col justify-evenly space-y-2">
+                  {/* FILAS (abajo en móvil, a la derecha en desktop) */}
+                  <div className="w-full lg:w-1/2 flex flex-col justify-evenly space-y-2">
                     {[...categoryData]
                       .sort((a, b) => b.value - a.value)
                       .slice(0, 5)
@@ -496,7 +496,7 @@ export const DataGrid = () => {
                           100
                         ).toFixed(1);
                         const formattedAmount = formatCurrency(
-                          category.value / 100,
+                          category.value,
                           data?.currency || "EUR"
                         );
 
@@ -532,14 +532,32 @@ export const DataGrid = () => {
                 </div>
               </div>
             ) : (
-              <div className="h-full flex flex-col items-center justify-center text-center p-4">
-                <PieChart className="w-12 h-12 text-gray-400 mb-3" />
-                <p className="text-sm font-medium text-gray-600">
-                  No category data
-                </p>
-                <p className="text-xs text-gray-500">
-                  Add categorized transactions
-                </p>
+              <div className="h-full flex flex-col items-center justify-center text-center p-8 relative">
+                {/* Background decoration */}
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-50/30 via-violet-50/20 to-indigo-50/30 rounded-xl" />
+
+                {/* Floating elements */}
+                <div className="absolute top-4 left-4 w-8 h-8 bg-purple-200/30 rounded-full animate-pulse delay-1000" />
+                <div className="absolute top-8 right-6 w-6 h-6 bg-violet-200/40 rounded-full animate-pulse delay-500" />
+                <div className="absolute bottom-6 left-8 w-4 h-4 bg-indigo-200/50 rounded-full animate-pulse delay-1500" />
+                <div className="absolute bottom-4 right-4 w-10 h-10 bg-purple-100/40 rounded-full animate-pulse" />
+
+                <div className="relative z-10 space-y-4">
+                  {/* Icon */}
+                  <div className="w-16 h-16 bg-gradient-to-br from-purple-100 to-violet-100 rounded-2xl flex items-center justify-center mx-auto shadow-lg">
+                    <PieChart className="w-8 h-8 text-purple-600" />
+                  </div>
+
+                  {/* Text content - solo 2 líneas */}
+                  <div className="space-y-1">
+                    <h3 className="text-lg font-bold text-purple-800">
+                      No spending data yet
+                    </h3>
+                    <p className="text-sm text-purple-600">
+                      Add transactions to see category insights
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
           </Card>

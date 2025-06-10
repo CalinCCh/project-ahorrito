@@ -1,6 +1,6 @@
 "use client"; // Ensure it's a client component
 
-import React, { memo, useCallback, useMemo, useEffect } from "react";
+import React, { memo, useCallback, useMemo, useEffect, useState } from "react";
 import {
   Banknote,
   BanknoteX,
@@ -55,6 +55,7 @@ interface AccountCardProps {
   large?: boolean;
   className?: string;
   isActive?: boolean;
+  isNewlyConnected?: boolean;
 }
 
 // Function to format the number for display (en-US, no currency symbol)
@@ -141,10 +142,23 @@ export const AccountCard = memo(function AccountCard({
   large = false,
   className = "",
   isActive = true,
+  isNewlyConnected = false,
 }: AccountCardProps) {
   const { data: accountData, isLoading } = useAccountDetails(accountId);
   const data = accountData as AccountDetails;
   const isMobile = useIsMobile();
+  const [showNewBadge, setShowNewBadge] = useState(isNewlyConnected);
+
+  // Highlight new accounts for longer (30 seconds)
+  useEffect(() => {
+    if (isNewlyConnected) {
+      console.log("Showing new badge for account:", accountId);
+      const timer = setTimeout(() => {
+        setShowNewBadge(false);
+      }, 30000); // 30 seconds
+      return () => clearTimeout(timer);
+    }
+  }, [isNewlyConnected, accountId]);
 
   const percentChange = useMemo(
     () =>
@@ -169,7 +183,11 @@ export const AccountCard = memo(function AccountCard({
 
   if (isLoading || !data) {
     return (
-      <Card className={`flex items-center justify-center ${isMobile ? "h-[160px]" : "h-[400px] md:h-[500px]"} bg-white shadow-xl rounded-2xl`}>
+      <Card
+        className={`flex items-center justify-center ${
+          isMobile ? "h-[160px]" : "h-[400px] md:h-[500px]"
+        } bg-white shadow-xl rounded-2xl`}
+      >
         <Loader2 className="animate-spin w-8 h-8 text-blue-400" />
       </Card>
     );
@@ -209,6 +227,9 @@ export const AccountCard = memo(function AccountCard({
         "rounded-xl shadow-lg",
         className,
         isAccountRefreshing(accountId) ? "opacity-50 pointer-events-none" : "",
+        isNewlyConnected
+          ? "ring-4 ring-blue-500 ring-offset-4 shadow-xl shadow-blue-200"
+          : "",
       ]
         .join(" ")
         .trim()}
@@ -218,9 +239,28 @@ export const AccountCard = memo(function AccountCard({
         minWidth: isMobile ? "auto" : large ? "450px" : "auto",
       }}
     >
+      {showNewBadge && (
+        <div className="absolute top-0 right-0 -mt-3 -mr-3 z-20">
+          <div className="bg-blue-600 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg animate-bounce">
+            Nueva cuenta
+          </div>
+        </div>
+      )}
+
+      {/* Add a "Connected" banner for newly connected accounts */}
+      {isNewlyConnected && (
+        <div className="absolute top-0 left-0 w-full bg-blue-500 text-white text-center py-1 rounded-t-xl z-10">
+          Conectada correctamente
+        </div>
+      )}
+
       <div className="relative z-10 w-full h-full flex flex-col flex-grow min-h-0 justify-between">
         {/* Header: account name and categorization badge - compact for mobile */}
-        <div className={`flex flex-col items-center gap-2 ${isMobile ? "pt-2 pb-2 min-h-[50px]" : "pt-3 pb-4 min-h-[90px]"}`}>
+        <div
+          className={`flex flex-col items-center gap-2 ${
+            isMobile ? "pt-2 pb-2 min-h-[50px]" : "pt-3 pb-4 min-h-[90px]"
+          }`}
+        >
           <div className="flex items-center w-full justify-center relative">
             <CardTitle
               className={
@@ -256,7 +296,13 @@ export const AccountCard = memo(function AccountCard({
 
         {/* Center: balance, perfectly centered - compact for mobile */}
         <div className="flex flex-col flex-grow min-h-0 justify-center items-center relative">
-          <div className={`flex flex-col items-center justify-center gap-2 ${isMobile ? "py-2" : "gap-4 md:gap-6 lg:gap-8 py-6 md:py-10 lg:py-12"} w-full relative`}>
+          <div
+            className={`flex flex-col items-center justify-center gap-2 ${
+              isMobile
+                ? "py-2"
+                : "gap-4 md:gap-6 lg:gap-8 py-6 md:py-10 lg:py-12"
+            } w-full relative`}
+          >
             <div className="flex justify-center w-full items-center">
               <div className="relative inline-block">
                 <div className="flex items-baseline justify-center text-center">
@@ -334,9 +380,17 @@ export const AccountCard = memo(function AccountCard({
         </div>
 
         {/* Footer: actions and details - simplified for mobile */}
-        <div className={`w-full rounded-b-3xl flex flex-col ${isMobile ? "gap-2 px-0 pt-2 pb-2" : "gap-3 md:gap-4 px-0 pt-4 pb-4"} mt-auto`}>
+        <div
+          className={`w-full rounded-b-3xl flex flex-col ${
+            isMobile ? "gap-2 px-0 pt-2 pb-2" : "gap-3 md:gap-4 px-0 pt-4 pb-4"
+          } mt-auto`}
+        >
           {/* Actions - simplified for mobile */}
-          <div className={`flex flex-row gap-2 w-full ${isMobile ? "px-3" : "px-6 md:px-8"}`}>
+          <div
+            className={`flex flex-row gap-2 w-full ${
+              isMobile ? "px-3" : "px-6 md:px-8"
+            }`}
+          >
             <Button
               size={isMobile ? "sm" : large ? "default" : "sm"}
               variant="default"
@@ -352,7 +406,11 @@ export const AccountCard = memo(function AccountCard({
             >
               <Pencil
                 className={
-                  isMobile ? "w-3 h-3 mr-1" : large ? "w-4 h-4 md:w-5 md:h-5 mr-2" : "w-3.5 h-3.5 mr-1.5"
+                  isMobile
+                    ? "w-3 h-3 mr-1"
+                    : large
+                    ? "w-4 h-4 md:w-5 md:h-5 mr-2"
+                    : "w-3.5 h-3.5 mr-1.5"
                 }
               />
               Edit
@@ -374,13 +432,21 @@ export const AccountCard = memo(function AccountCard({
                 {isAccountRefreshing(data.account.id) ? (
                   <Loader2
                     className={`${
-                      isMobile ? "w-3 h-3 mr-1" : large ? "w-4 h-4 md:w-5 md:h-5 mr-2" : "w-3.5 h-3.5 mr-1.5"
+                      isMobile
+                        ? "w-3 h-3 mr-1"
+                        : large
+                        ? "w-4 h-4 md:w-5 md:h-5 mr-2"
+                        : "w-3.5 h-3.5 mr-1.5"
                     } animate-spin`}
                   />
                 ) : (
                   <RefreshCw
                     className={
-                      isMobile ? "w-3 h-3 mr-1" : large ? "w-4 h-4 md:w-5 md:h-5 mr-2" : "w-3.5 h-3.5 mr-1.5"
+                      isMobile
+                        ? "w-3 h-3 mr-1"
+                        : large
+                        ? "w-4 h-4 md:w-5 md:h-5 mr-2"
+                        : "w-3.5 h-3.5 mr-1.5"
                     }
                   />
                 )}
@@ -412,7 +478,9 @@ export const AccountCard = memo(function AccountCard({
               )}
               {data.accountNumberDisplay && (
                 <div className="flex flex-row items-center justify-between w-full gap-2">
-                  <span className="text-slate-500 font-normal">Account No:</span>
+                  <span className="text-slate-500 font-normal">
+                    Account No:
+                  </span>
                   <span className="text-slate-800 font-semibold tracking-tighter font-mono truncate text-right">
                     {data.accountNumberDisplay}
                   </span>
@@ -498,7 +566,10 @@ export const AccountCard = memo(function AccountCard({
                     <Landmark className="w-3 h-3 text-slate-400 flex-shrink-0" />
                     Bank:
                   </span>
-                  <span className="text-slate-700 font-semibold truncate text-right text-xs" title={data.bank.institutionName}>
+                  <span
+                    className="text-slate-700 font-semibold truncate text-right text-xs"
+                    title={data.bank.institutionName}
+                  >
                     {data.bank.institutionName}
                   </span>
                 </div>

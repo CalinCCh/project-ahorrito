@@ -309,19 +309,69 @@ export function DataTable<TData, TValue>({
                 </TableRow>
               ))
             ) : (
-              <TableRow className="h-9">
-                {" "}
-                // Further reduced from h-10
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-9 text-center align-middle" // Further reduced from h-10
-                >
-                  No results.
-                </TableCell>
+              <TableRow>
+                {columns.map((column, colIndex) => {
+                  // Apply same width logic for empty state cells
+                  const getColumnWidth = (columnIndex: number) => {
+                    const columnIds = [
+                      "select",
+                      "date",
+                      "category",
+                      "payee",
+                      "account",
+                      "amount",
+                      "actions",
+                    ];
+                    const columnId = columnIds[columnIndex] || "default";
+                    switch (columnId) {
+                      case "select":
+                        return "w-12";
+                      case "date":
+                        return "w-32";
+                      case "category":
+                        return "w-48";
+                      case "payee":
+                        return "w-56";
+                      case "account":
+                        return "w-40";
+                      case "amount":
+                        return "w-28";
+                      case "actions":
+                        return "w-16";
+                      default:
+                        return "w-32";
+                    }
+                  };
+
+                  // Only show "No results" message in the middle column
+                  if (colIndex === Math.floor(columns.length / 2)) {
+                    return (
+                      <TableCell
+                        key={`empty-cell-${colIndex}`}
+                        className={`h-9 ${getColumnWidth(
+                          colIndex
+                        )} px-2 align-middle text-center`}
+                      >
+                        No results.
+                      </TableCell>
+                    );
+                  }
+
+                  return (
+                    <TableCell
+                      key={`empty-cell-${colIndex}`}
+                      className={`h-9 ${getColumnWidth(
+                        colIndex
+                      )} px-2 align-middle`}
+                    >
+                      &nbsp;
+                    </TableCell>
+                  );
+                })}
               </TableRow>
             )}
             {/* Render empty rows to fill space if needed, with fixed height */}
-            {!isUnifiedContainer &&
+            {(!isUnifiedContainer || table.getRowModel().rows?.length === 0) &&
               emptyRowsCount > 0 &&
               Array.from({ length: emptyRowsCount }).map((_, index) => (
                 <TableRow

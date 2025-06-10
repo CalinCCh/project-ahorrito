@@ -33,77 +33,185 @@ interface AIResponse {
  */
 function shouldIncludeFinancialContext(question: string): boolean {
   const lowerQuestion = question.toLowerCase().trim();
-  
+
   // Lista exhaustiva de saludos y frases casuales - NO requieren contexto
   const casualPhrases = [
     // Saludos básicos
-    'hola', 'hello', 'hi', 'hey', 'buenas', 'saludos', 'holaa', 'holis',
-    'buenos días', 'buenas tardes', 'buenas noches', 'buen día',
-    'good morning', 'good afternoon', 'good evening', 'good night',
-    
+    "hola",
+    "hello",
+    "hi",
+    "hey",
+    "buenas",
+    "saludos",
+    "holaa",
+    "holis",
+    "buenos días",
+    "buenas tardes",
+    "buenas noches",
+    "buen día",
+    "good morning",
+    "good afternoon",
+    "good evening",
+    "good night",
+
     // Preguntas casuales
-    'que tal', 'qué tal', 'como estas', 'cómo estás', 'como va', 'cómo va',
-    'how are you', 'how is it going', 'what\'s up', 'wassup',
-    
+    "que tal",
+    "qué tal",
+    "como estas",
+    "cómo estás",
+    "como va",
+    "cómo va",
+    "how are you",
+    "how is it going",
+    "what's up",
+    "wassup",
+
     // Respuestas de cortesía
-    'gracias', 'thanks', 'thank you', 'muchas gracias', 'perfecto', 'ok',
-    'vale', 'bien', 'genial', 'excelente', 'fantástico', 'está bien',
-    
+    "gracias",
+    "thanks",
+    "thank you",
+    "muchas gracias",
+    "perfecto",
+    "ok",
+    "vale",
+    "bien",
+    "genial",
+    "excelente",
+    "fantástico",
+    "está bien",
+
     // Despedidas
-    'adiós', 'bye', 'hasta luego', 'nos vemos', 'chao', 'see you', 'goodbye',
-    
+    "adiós",
+    "bye",
+    "hasta luego",
+    "nos vemos",
+    "chao",
+    "see you",
+    "goodbye",
+
     // Confirmaciones simples
-    'si', 'sí', 'no', 'yes', 'yeah', 'nope', 'sure', 'claro', 'por supuesto'
+    "si",
+    "sí",
+    "no",
+    "yes",
+    "yeah",
+    "nope",
+    "sure",
+    "claro",
+    "por supuesto",
   ];
-  
+
   // Verificación exacta primero (máxima prioridad)
   if (casualPhrases.includes(lowerQuestion)) {
     return false;
   }
-  
+
   // Verificación de frases que empiezan con saludos casuales
-  const casualStarters = ['hola', 'hello', 'hi', 'hey', 'buenas', 'que tal', 'qué tal'];
-  if (casualStarters.some(starter => lowerQuestion.startsWith(starter))) {
+  const casualStarters = [
+    "hola",
+    "hello",
+    "hi",
+    "hey",
+    "buenas",
+    "que tal",
+    "qué tal",
+  ];
+  if (casualStarters.some((starter) => lowerQuestion.startsWith(starter))) {
     // Si empieza con saludo pero es muy largo, podría tener contenido financiero
     if (lowerQuestion.length < 20) {
       return false;
     }
   }
-  
+
   // Palabras clave que SÍ requieren contexto financiero
   const financialKeywords = [
-    'balance', 'dinero', 'gasto', 'gastos', 'ingreso', 'ingresos', 'ahorro', 'ahorros',
-    'cuenta', 'cuentas', 'transacción', 'transacciones', 'presupuesto', 'categoría',
-    'categorías', 'finanza', 'finanzas', 'pago', 'pagos', 'deuda', 'deudas',
-    'inversión', 'inversiones', 'salud financiera', 'patrón', 'patrones',
-    'análisis', 'recomendación', 'recomendaciones', 'consejo', 'consejos',
-    'cuánto', 'dónde gasto', 'en qué gasto', 'proyección', 'predicción',
-    'budget', 'money', 'expense', 'expenses', 'income', 'saving', 'savings',
-    'account', 'accounts', 'transaction', 'transactions', 'financial',
-    'spending', 'payment', 'payments', 'debt', 'investment', 'analysis'
+    "balance",
+    "dinero",
+    "gasto",
+    "gastos",
+    "ingreso",
+    "ingresos",
+    "ahorro",
+    "ahorros",
+    "cuenta",
+    "cuentas",
+    "transacción",
+    "transacciones",
+    "presupuesto",
+    "categoría",
+    "categorías",
+    "finanza",
+    "finanzas",
+    "pago",
+    "pagos",
+    "deuda",
+    "deudas",
+    "inversión",
+    "inversiones",
+    "salud financiera",
+    "patrón",
+    "patrones",
+    "análisis",
+    "recomendación",
+    "recomendaciones",
+    "consejo",
+    "consejos",
+    "cuánto",
+    "dónde gasto",
+    "en qué gasto",
+    "proyección",
+    "predicción",
+    "budget",
+    "money",
+    "expense",
+    "expenses",
+    "income",
+    "saving",
+    "savings",
+    "account",
+    "accounts",
+    "transaction",
+    "transactions",
+    "financial",
+    "spending",
+    "payment",
+    "payments",
+    "debt",
+    "investment",
+    "analysis",
   ];
-  
+
   // Si contiene palabras clave financieras, incluir contexto
-  if (financialKeywords.some(keyword => lowerQuestion.includes(keyword))) {
+  if (financialKeywords.some((keyword) => lowerQuestion.includes(keyword))) {
     return true;
   }
-  
+
   // Preguntas que implican análisis financiero
   const analyticalPhrases = [
-    '¿cuál es mi', '¿como está mi', '¿cómo está mi', 'analiza mi',
-    'muéstrame mi', 'revisa mi', 'explica mi', 'ayúdame con',
-    'what is my', 'how is my', 'show me my', 'analyze my', 'help me with'
+    "¿cuál es mi",
+    "¿como está mi",
+    "¿cómo está mi",
+    "analiza mi",
+    "muéstrame mi",
+    "revisa mi",
+    "explica mi",
+    "ayúdame con",
+    "what is my",
+    "how is my",
+    "show me my",
+    "analyze my",
+    "help me with",
   ];
-  
-  if (analyticalPhrases.some(phrase => lowerQuestion.includes(phrase))) {
+
+  if (analyticalPhrases.some((phrase) => lowerQuestion.includes(phrase))) {
     return true;
   }
-  
+
   // Para preguntas muy cortas (menos de 15 caracteres), probablemente son casuales
   if (lowerQuestion.length < 15) {
     return false;
   }
-  
+
   // Para preguntas largas, incluir contexto por defecto
   return lowerQuestion.length > 50;
 }
@@ -112,64 +220,72 @@ export function useAIChat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const sendMessage = useCallback(async (question: string) => {
-    if (!question.trim() || isLoading) return;
+  const sendMessage = useCallback(
+    async (question: string) => {
+      if (!question.trim() || isLoading) return;
 
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      content: question,
-      role: "user",
-      timestamp: new Date(),
-    };
+      const userMessage: Message = {
+        id: Date.now().toString(),
+        content: question,
+        role: "user",
+        timestamp: new Date(),
+      };
 
-    setMessages(prev => [...prev, userMessage]);
-    setIsLoading(true);
+      setMessages((prev) => [...prev, userMessage]);
+      setIsLoading(true);
 
-    // Detectar si la pregunta requiere contexto financiero
-    const needsFinancialContext = shouldIncludeFinancialContext(question);
+      // Detectar si la pregunta requiere contexto financiero
+      const needsFinancialContext = shouldIncludeFinancialContext(question);
 
-    try {
-      const response = await fetch('/api/ai-assistant/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          question,
-          includeContext: needsFinancialContext,
-          enhancedAnalysis: needsFinancialContext,
-        }),
-      });
+      try {
+        const response = await fetch("/api/ai-assistant/chat", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            question,
+            includeContext: needsFinancialContext,
+            enhancedAnalysis: needsFinancialContext,
+          }),
+        });
 
-      const data: AIResponse = await response.json();
+        const data: AIResponse = await response.json();
 
-      if (data.success && data.response) {
-        const aiResponse: Message = {
+        if (data.success && data.response) {
+          const aiResponse: Message = {
+            id: (Date.now() + 1).toString(),
+            content:
+              data.response.text ||
+              "Lo siento, no pude procesar tu consulta en este momento.",
+            role: "assistant",
+            timestamp: new Date(),
+          };
+          setMessages((prev) => [...prev, aiResponse]);
+          return data;
+        } else {
+          throw new Error(
+            data.fallbackResponse?.text || "Error en la respuesta de la IA"
+          );
+        }
+      } catch (error) {
+        console.error("Error calling AI assistant:", error);
+
+        const fallbackResponse: Message = {
           id: (Date.now() + 1).toString(),
-          content: data.response.text || "Lo siento, no pude procesar tu consulta en este momento.",
+          content:
+            "Lo siento, hay un problema temporal con el asistente. Por favor intenta de nuevo en unos momentos.",
           role: "assistant",
           timestamp: new Date(),
         };
-        setMessages(prev => [...prev, aiResponse]);
-        return data;
-      } else {
-        throw new Error(data.fallbackResponse?.text || "Error en la respuesta de la IA");
+        setMessages((prev) => [...prev, fallbackResponse]);
+        throw error;
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      console.error('Error calling AI assistant:', error);
-      
-      const fallbackResponse: Message = {
-        id: (Date.now() + 1).toString(),
-        content: "Lo siento, hay un problema temporal con el asistente. Por favor intenta de nuevo en unos momentos.",
-        role: "assistant",
-        timestamp: new Date(),
-      };
-      setMessages(prev => [...prev, fallbackResponse]);
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [isLoading]);
+    },
+    [isLoading]
+  );
 
   const clearMessages = useCallback(() => {
     setMessages([]);
@@ -195,6 +311,9 @@ Soy tu **asistente financiero personal** con IA avanzada. Estoy aquí para ayuda
 - "¿Cómo está mi salud financiera?"
 - "¿En qué categorías gasto más?"
 - "Ayúdame a crear un plan de ahorros"
+- "Analiza mis gastos del último mes"
+- "Dame consejos para reducir gastos"
+- "¿Cuánto puedo ahorrar este mes?"
 
 **¿En qué te gustaría que te ayude hoy?** 🚀`,
       role: "assistant",
