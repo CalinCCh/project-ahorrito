@@ -8,6 +8,7 @@ import { DataGrid } from "@/components/data-display/DataGrid";
 import { RecentActivity } from "@/components/data-display/RecentActivity";
 import { SavingsGoalsSection } from "@/components/savings/SavingsGoalsSection";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import DebugClerk from "@/components/debug/clerk-debug";
 import { useState } from "react";
 import { redirect } from "next/navigation";
 
@@ -15,14 +16,21 @@ export default function HomePage() {
   const { user, isLoaded } = useUser();
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Wait for Clerk to load
+  // DEBUG: Mostrar componente de debug si no está cargado
   if (!isLoaded) {
-    return <div>Loading...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div>
+          <div className="text-center mb-4">Loading Clerk...</div>
+          <DebugClerk />
+        </div>
+      </div>
+    );
   }
 
-  // If not authenticated, redirect to landing
+  // If not authenticated, redirect to sign-in instead of landing
   if (!user) {
-    redirect("/landing");
+    redirect("/sign-in");
   }
 
   const handleSearchChange = (value: string) => {

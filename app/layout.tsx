@@ -21,16 +21,21 @@ export default function RootLayout({
 }>) {
   const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
+  if (!publishableKey) {
+    throw new Error("Missing Clerk Publishable Key");
+  }
+
   return (
     <ClerkProvider
-      publishableKey={publishableKey!}
+      publishableKey={publishableKey}
       signInUrl="/sign-in"
       signUpUrl="/sign-up"
       afterSignInUrl="/"
       afterSignUpUrl="/"
+      dynamic
     >
-      {" "}
-      <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`}>        <body className="antialiased font-sans">
+      <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`}>
+        <body className="antialiased font-sans">
           <QueryProvider>
             <SheetProvider />
             <Toaster />
