@@ -10,26 +10,30 @@ import { insertCategorySchema, categories } from "@/db/schema"
 import { z } from 'zod';
 
 
-const app = new Hono()
-
-    .get(
+const app = new Hono()    .get(
         "/",
         clerkMiddleware(),
         async (c) => {
-            const auth = getAuth(c)
+            try {
+                const auth = getAuth(c)
 
-            if (!auth?.userId) {
-                return c.json({ error: "Unauthorized" }, 401)
+                if (!auth?.userId) {
+                    return c.json({ error: "Unauthorized" }, 401)
+                }
+
+                const data = await db
+                    .select({
+                        id: categories.id,
+                        name: categories.name,
+                    })
+                    .from(categories)
+                    .where(eq(categories.userId, auth.userId))
+                    
+                return c.json({ data })
+            } catch (error) {
+                console.error('Categories API Error:', error)
+                return c.json({ error: "Internal server error" }, 500)
             }
-
-            const data = await db
-                .select({
-                    id: categories.id,
-                    name: categories.name,
-                })
-                .from(categories)
-                .where(eq(categories.userId, auth.userId))
-            return c.json({ data })
         })
     .get(
         "/:id",

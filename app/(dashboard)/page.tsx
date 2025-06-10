@@ -3,11 +3,13 @@
 import { useUser } from "@clerk/nextjs";
 import { motion } from "framer-motion";
 import { ModernDashboardHeader } from "@/components/layout/ModernDashboardHeader";
-import { AccountFilter } from "@/components/filters/AccountFilter";
-import { DataGrid } from "@/components/data-display/DataGrid";
-import { RecentActivity } from "@/components/data-display/RecentActivity";
-import { SavingsGoalsSection } from "@/components/savings/SavingsGoalsSection";
-import { useState } from "react";
+import { 
+  OptimizedAccountFilter,
+  OptimizedDataGrid,
+  OptimizedRecentActivity,
+  OptimizedSavingsGoalsSection
+} from "@/components/optimization/LazyComponents";
+import { useState, useMemo } from "react";
 
 export default function DashboardPage() {
   const { user } = useUser();
@@ -62,11 +64,10 @@ export default function DashboardPage() {
             <ModernDashboardHeader
               subtitle="Manage your finances with intelligence and style"
               onSearchChange={handleSearchChange}
-            >
-              {/* Filter section inside the header - responsive */}
+            >              {/* Filter section inside the header - responsive */}
               <div className="flex items-center">
                 <div className="w-full sm:w-auto">
-                  <AccountFilter />
+                  <OptimizedAccountFilter />
                 </div>
               </div>
             </ModernDashboardHeader>
@@ -81,7 +82,7 @@ export default function DashboardPage() {
               transition={{ duration: 0.6, delay: 0.1 }}
               className="w-full"
             >
-              <DataGrid />
+              <OptimizedDataGrid />
             </motion.div>
 
             {/* Savings Goals & Achievements Section - Mobile Optimized */}
@@ -91,7 +92,7 @@ export default function DashboardPage() {
               transition={{ duration: 0.6, delay: 0.15 }}
               className="w-full"
             >
-              <SavingsGoalsSection />
+              <OptimizedSavingsGoalsSection />
             </motion.div>
 
             {/* Recent Activity Section - Mobile Optimized */}
@@ -101,7 +102,7 @@ export default function DashboardPage() {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="w-full"
             >
-              <RecentActivity />
+              <OptimizedRecentActivity />
             </motion.div>
           </div>
         </div>

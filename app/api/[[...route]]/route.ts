@@ -1,5 +1,7 @@
 import { Hono } from 'hono';
 import { handle } from 'hono/vercel';
+import { cors } from 'hono/cors';
+import { getAllowedOrigins } from '@/lib/api-config';
 
 import categories from './categories'
 import accounts from './accounts'
@@ -19,9 +21,26 @@ import subscriptionsRoutes from "./subscriptions";
 import adminRoutes from "./admin";
 import userLevelsRoutes from "./user-levels";
 
-export const runtime = 'edge'
+// Cambiar a nodejs runtime para mejor compatibilidad con DB
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 
 const app = new Hono().basePath('/api')
+
+// Add CORS middleware
+app.use('*', cors({
+  origin: getAllowedOrigins(),
+  allowMethods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+}))
+
+// Logging middleware
+app.use('*', async (c, next) => {
+  console.log(`[HONO REQUEST] ${c.req.method} ${c.req.path}`,
+    c.req.method === 'POST' ? 'Con body' : '');
+  await next();
+});
 
 const routes = app
   .route("/accounts", accounts)
@@ -44,16 +63,11 @@ const routes = app
 
 console.log('[HONO CONFIG] Rutas configuradas:', Object.keys(routes));
 
-app.use('*', async (c, next) => {
-  console.log(`[HONO REQUEST] ${c.req.method} ${c.req.path}`,
-    c.req.method === 'POST' ? 'Con body' : '');
-  await next();
-});
-
 export const GET = handle(app)
 export const POST = handle(app)
 export const PATCH = handle(app)
 export const DELETE = handle(app)
+export const OPTIONS = handle(app)
 
 
 export type AppType = typeof routes
