@@ -1,13 +1,13 @@
 {
   "name": "project-ahorrito",
   "version": "0.1.0",
-  "private": true,
-  "scripts": {
+  "private": true,  "scripts": {
     "dev": "concurrently \"next dev --turbopack\" \"node scripts/categorize-worker.js\" \"dotenv -e .env.local -- drizzle-kit studio\"",
     "build": "next build",
     "vercel-build": "next build && node scripts/post-build.js",
     "start": "next start",
     "lint": "next lint",
+    "validate-vercel": "node scripts/validate-vercel-config.js",
     "db-generate": "drizzle-kit generate",
     "db-migrate": "bun ./scripts/migrate.ts",
     "db-studio": "dotenv -e .env.local -- drizzle-kit studio",

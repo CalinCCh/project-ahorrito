@@ -19,6 +19,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react"; // Importar useState
 import { Input } from "@/components/ui/input"; // Importar Input
 import { Label } from "@/components/ui/label"; // Importar Label
+import { useEnvironmentUrls } from "@/lib/environment-urls";
 
 // Schema para el nombre de la cuenta antes de conectar con el banco
 const bankAccountNameSchema = z.object({
@@ -80,11 +81,10 @@ export const NewAccountSheet = () => {
       return;
     }
     // Guardar el nombre temporalmente
-    localStorage.setItem("bankAccountNameInProgress", bankAccountName);
-
-    // ¡IMPORTANTE! Reemplaza con tus variables de entorno y valores correctos
-    const clientId = process.env.NEXT_PUBLIC_TRUELAYER_CLIENT_ID; // Debería ser "ahorrito-3ee452" según tu link
-    const redirectUri = process.env.NEXT_PUBLIC_TRUELAYER_REDIRECT_URI; // Debería ser "http://localhost:3000/truelayer-callback" para desarrollo
+    localStorage.setItem("bankAccountNameInProgress", bankAccountName);    // ¡IMPORTANTE! Usar configuración dinámica
+    const { truelayerRedirectUri } = useEnvironmentUrls();
+    const clientId = process.env.NEXT_PUBLIC_TRUELAYER_CLIENT_ID;
+    const redirectUri = truelayerRedirectUri;
 
     if (!clientId || !redirectUri) {
       toast.error(

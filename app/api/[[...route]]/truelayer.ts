@@ -5,9 +5,12 @@ import { accounts, transactions, bankConnections, accountBalances, categories, p
 import { createId } from '@paralleldrive/cuid2';
 import { eq, desc, sql, and } from 'drizzle-orm';
 import { convertAmountToMiliunits } from '@/lib/utils';
+import { getTrueLayerConfig } from '@/lib/truelayer-config';
 
-const API_BASE_URL = 'https://api.truelayer.com';
-const AUTH_URL = 'https://auth.truelayer.com/connect/token';
+// Usar configuración dinámica
+const config = getTrueLayerConfig();
+const API_BASE_URL = config.apiBaseUrl;
+const AUTH_URL = config.authUrl;
 
 export type BankConnection = {
     id: string;
@@ -24,8 +27,8 @@ async function refreshAccessToken(connection: BankConnection): Promise<string> {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({
             grant_type: 'refresh_token',
-            client_id: process.env.TRUELAYER_CLIENT_ID!,
-            client_secret: process.env.TRUELAYER_CLIENT_SECRET!,
+            client_id: config.clientId!,
+            client_secret: config.clientSecret!,
             refresh_token: connection.refreshToken,
         }),
     });
@@ -415,9 +418,9 @@ app.post('/exchange-token', clerkMiddleware(), async (c) => {
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: new URLSearchParams({
                 grant_type: 'authorization_code',
-                client_id: process.env.TRUELAYER_CLIENT_ID!,
-                client_secret: process.env.TRUELAYER_CLIENT_SECRET!,
-                redirect_uri: process.env.TRUELAYER_REDIRECT_URI!,
+                client_id: config.clientId!,
+                client_secret: config.clientSecret!,
+                redirect_uri: config.redirectUri,
                 code: codeFromBody,
             }),
         });

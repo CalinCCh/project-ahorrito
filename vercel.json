@@ -1,4 +1,13 @@
 {
   "framework": "nextjs",
-  "buildCommand": "next build && echo 'module.exports = {};' > .next/server/app/\\(dashboard\\)/page_client-reference-manifest.js || true"
+  "buildCommand": "next build && echo 'module.exports = {};' > .next/server/app/\\(dashboard\\)/page_client-reference-manifest.js || true",
+  "functions": {
+    "app/api/[[...route]]/route.ts": {
+      "maxDuration": 30
+    }
+  },
+  "regions": ["iad1"],
+  "env": {
+    "NODE_ENV": "production"
+  }
 }

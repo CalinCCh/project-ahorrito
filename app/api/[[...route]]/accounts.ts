@@ -10,10 +10,12 @@ import { insertAccountSchema, accounts, accountBalances, bankConnections, transa
 import { z } from 'zod';
 import { desc, sql } from 'drizzle-orm';
 import { convertAmountFromMiliunits } from '@/lib/utils';
+import { getTrueLayerConfig } from '@/lib/truelayer-config';
 
-// Constantes para TrueLayer
-const API_BASE_URL_TRUELAYER = 'https://api.truelayer.com';
-const AUTH_URL_TRUELAYER = 'https://auth.truelayer.com/connect/token';
+// Usar configuración dinámica
+const config = getTrueLayerConfig();
+const API_BASE_URL_TRUELAYER = config.apiBaseUrl;
+const AUTH_URL_TRUELAYER = config.authUrl;
 
 // Tipo simplificado para la conexión bancaria
 type BankConnection = {
@@ -36,11 +38,10 @@ async function refreshAccessToken(connection: BankConnection): Promise<string> {
     if (!connection.refreshToken) throw new Error('No hay refresh token disponible');
     const response = await fetch(AUTH_URL_TRUELAYER, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },        body: new URLSearchParams({
             grant_type: 'refresh_token',
-            client_id: process.env.TRUELAYER_CLIENT_ID!,
-            client_secret: process.env.TRUELAYER_CLIENT_SECRET!,
+            client_id: config.clientId!,
+            client_secret: config.clientSecret!,
             refresh_token: connection.refreshToken,
         }),
     });

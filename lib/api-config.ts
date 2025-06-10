@@ -1,23 +1,36 @@
+import { getEnvironmentUrls } from './environment-urls';
+
 // Configuración simplificada de URLs para evitar problemas de SSR
 export const getApiUrl = () => {
-  if (typeof window !== 'undefined') {
-    // En el cliente, usar siempre la URL actual
-    return window.location.origin;
-  }
-  // En el servidor, usar variable de entorno o localhost
-  return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+  return getEnvironmentUrls().apiUrl;
 };
 
 export const getBaseUrl = () => {
-  return getApiUrl();
+  return getEnvironmentUrls().baseUrl;
 };
 
-// Lista simplificada de orígenes permitidos para CORS - INCLUIR TODOS LOS DEPLOYMENTS
-export const getAllowedOrigins = () => [
-  'http://localhost:3000',
-  'https://ahorrito-e1gopprcr-calin-constantin-chirilas-projects.vercel.app', // NUEVA URL
-  'https://ahorrito-p04sg1y0e-calin-constantin-chirilas-projects.vercel.app',
-  'https://ahorrito-lki9s4pj7-calin-constantin-chirilas-projects.vercel.app',
-  'https://ahorrito-fdbsf9bog-calin-constantin-chirilas-projects.vercel.app',
-  /https:\/\/ahorrito-.*\.vercel\.app$/
-];
+// Configuración dinámica de orígenes permitidos para CORS
+export const getAllowedOrigins = () => {
+  const origins = [
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'https://localhost:3000',
+    'https://localhost:3001'
+  ];
+  
+  // Agregar el origen actual si estamos en el navegador
+  if (typeof window !== 'undefined') {
+    const currentOrigin = window.location.origin;
+    if (!origins.includes(currentOrigin)) {
+      origins.push(currentOrigin);
+    }
+  }
+  
+  // Agregar patrones para Vercel
+  return [
+    ...origins,
+    /^https:\/\/.*\.vercel\.app$/,
+    /^https:\/\/.*-.*\.vercel\.app$/,
+    /^https:\/\/.*\.vercel\.com$/
+  ];
+};

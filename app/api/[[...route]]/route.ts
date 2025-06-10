@@ -27,9 +27,37 @@ export const dynamic = 'force-dynamic'
 
 const app = new Hono().basePath('/api')
 
-// Add CORS middleware
+// Add CORS middleware con configuración dinámica
 app.use('*', cors({
-  origin: getAllowedOrigins(),
+  origin: (origin, c) => {
+    // Permitir requests sin origen (como Postman, mobile apps, etc.)
+    if (!origin) return origin;
+    
+    const allowedOrigins = getAllowedOrigins();
+    
+    // Verificar orígenes exactos
+    const exactMatch = allowedOrigins.filter(o => typeof o === 'string').includes(origin);
+    if (exactMatch) return origin;
+    
+    // Verificar patrones regex
+    const regexMatch = allowedOrigins
+      .filter(o => o instanceof RegExp)
+      .some(pattern => pattern.test(origin));
+    if (regexMatch) return origin;
+    
+    // Permitir localhost en desarrollo
+    if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+      return origin;
+    }
+    
+    // Permitir Vercel deployments
+    if (origin.includes('.vercel.app') || origin.includes('.vercel.com')) {
+      return origin;
+    }
+    
+    console.log(`[CORS] Origen no permitido: ${origin}`);
+    return false;
+  },
   allowMethods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
   allowHeaders: ['Content-Type', 'Authorization'],
   credentials: true
