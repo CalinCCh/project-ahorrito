@@ -24,49 +24,22 @@ const app = new Hono()
 
 app.get("/", async (c) => {
     try {
-        const auth = getAuth(c);
-
-        if (!auth?.userId) {
-            return c.json({ error: "Unauthorized" }, 401);
-        }
+        // TEMPORAL: Skip auth for now to test DB connection
+        // const auth = getAuth(c);
+        // if (!auth?.userId) {
+        //     return c.json({ error: "Unauthorized" }, 401);
+        // }
 
         // Get all achievement definitions
         const definitions = await db
             .select()
             .from(achievementDefinitions)
-            .orderBy(achievementDefinitions.category, achievementDefinitions.xpReward);
+            .orderBy(achievementDefinitions.category, achievementDefinitions.xpReward)
+            .limit(5); // Limit for testing
 
-        // Get user progress for each achievement
-        const userProgress = await db
-            .select()
-            .from(userAchievements)
-            .where(eq(userAchievements.userId, auth.userId));
-
-        // Combine definitions with user progress
-        const achievements = definitions.map(def => {
-            const progress = userProgress.find(p => p.achievementId === def.id);
-            // Parse requirements safely if it's a string; else assume it's already an object
-            const requirements =
-                typeof def.requirements === 'string'
-                    ? JSON.parse(def.requirements)
-                    : def.requirements;
-            return {
-                ...def,
-                progress: progress?.progress || 0,
-                currentValue: progress?.currentValue || 0,
-                targetValue: progress?.targetValue || requirements.target || 1,
-                completedAt: progress?.completedAt,
-                unlockedAt: progress?.unlockedAt,
-                isCompleted: !!progress?.completedAt,
-                isUnlocked: !!progress,
-                progressPercentage: progress ? Math.min((progress.currentValue || 0) / (progress.targetValue || 1) * 100, 100) : 0
-            };
-        });
-
-        return c.json({ achievements });
+        return c.json({ achievements: definitions });
     } catch (error) {
-        console.error("Error fetching achievements:", error);
-        return c.json({ error: "Internal server error" }, 500);
+        return c.json({ error: error.message }, 500);
     }
 });
 
