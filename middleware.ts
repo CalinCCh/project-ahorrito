@@ -7,6 +7,7 @@ const isPublicRoute = createRouteMatcher([
   '/sign-in(.*)',
   '/sign-up(.*)',
   '/landing(.*)',
+  '/truelayer-callback(.*)',
   '/api(.*)',
 ]);
 
