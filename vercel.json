@@ -1,12 +1,4 @@
 {
   "version": 2,
-  "framework": "nextjs",
-  "buildCommand": "npm run build",
-  "installCommand": "npm install",
-  "rewrites": [
-    {
-      "source": "/((?!api|_next|_static|favicon.ico).*)",
-      "destination": "/"
-    }
-  ]
+  "framework": "nextjs"
 }

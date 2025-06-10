@@ -3,9 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   eslint: { ignoreDuringBuilds: true },
   typescript: { ignoreBuildErrors: true },
-  experimental: {
-    serverComponentsExternalPackages: ["@clerk/nextjs"]
-  },
+  serverExternalPackages: ["@clerk/nextjs"],
   images: {
     remotePatterns: [
       {
@@ -13,8 +11,7 @@ const nextConfig: NextConfig = {
         hostname: "img.clerk.com",
       },
     ],
-  },
-  output: 'standalone'
+  }
 };
 
 export default nextConfig;
