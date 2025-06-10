@@ -27,39 +27,18 @@ export const dynamic = 'force-dynamic'
 
 const app = new Hono().basePath('/api')
 
-// Add CORS middleware con configuración dinámica
+// Add CORS middleware simplificado para producción
 app.use('*', cors({
   origin: (origin, c) => {
     // Permitir requests sin origen (como Postman, mobile apps, etc.)
-    if (!origin) return origin;
+    if (!origin) return '*';
     
-    const allowedOrigins = getAllowedOrigins();
-    
-    // Verificar orígenes exactos
-    const exactMatch = allowedOrigins.filter(o => typeof o === 'string').includes(origin);
-    if (exactMatch) return origin;
-    
-    // Verificar patrones regex
-    const regexMatch = allowedOrigins
-      .filter(o => o instanceof RegExp)
-      .some(pattern => pattern.test(origin));
-    if (regexMatch) return origin;
-    
-    // Permitir localhost en desarrollo
-    if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
-      return origin;
-    }
-    
-    // Permitir Vercel deployments
-    if (origin.includes('.vercel.app') || origin.includes('.vercel.com')) {
-      return origin;
-    }
-    
-    console.log(`[CORS] Origen no permitido: ${origin}`);
-    return false;
+    // Permitir todos los orígenes en producción temporalmente para debug
+    console.log(`[CORS] Permitiendo origen: ${origin}`);
+    return origin;
   },
   allowMethods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowHeaders: ['Content-Type', 'Authorization'],
+  allowHeaders: ['Content-Type', 'Authorization', 'x-custom-header'],
   credentials: true
 }))
 
@@ -67,7 +46,22 @@ app.use('*', cors({
 app.use('*', async (c, next) => {
   console.log(`[HONO REQUEST] ${c.req.method} ${c.req.path}`,
     c.req.method === 'POST' ? 'Con body' : '');
-  await next();
+  try {
+    await next();
+  } catch (error) {
+    console.error('[HONO ERROR]', error);
+    return c.json({ error: 'Internal server error', details: error.message }, 500);
+  }
+});
+
+// Test endpoint para verificar que la API funciona
+app.get('/test', (c) => {
+  return c.json({
+    success: true,
+    message: 'API funcionando correctamente',
+    timestamp: new Date().toISOString(),
+    path: c.req.path
+  });
 });
 
 const routes = app

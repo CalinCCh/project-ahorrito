@@ -38,7 +38,8 @@ async function refreshAccessToken(connection: BankConnection): Promise<string> {
     if (!connection.refreshToken) throw new Error('No hay refresh token disponible');
     const response = await fetch(AUTH_URL_TRUELAYER, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },        body: new URLSearchParams({
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
             grant_type: 'refresh_token',
             client_id: config.clientId!,
             client_secret: config.clientSecret!,
@@ -562,7 +563,7 @@ const app = new Hono()
             return c.json({ data })
         }
     )
-    .get('/pending-categorization', async (c) => {
+    .get('/pending-categorization', clerkMiddleware(), async (c) => {
         const auth = getAuth(c);
         if (!auth?.userId) {
             return c.json({ error: 'Unauthorized' }, 401);
