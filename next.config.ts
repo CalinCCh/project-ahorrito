@@ -11,7 +11,10 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  outputFileTracing: false
+  experimental: {
+    missingSuspenseWithCSRBailout: false,
+  },
+  output: 'standalone'
 };
 
 export default nextConfig;

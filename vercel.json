@@ -1,5 +1,4 @@
 {
-  "version": 2,
   "framework": "nextjs",
-  "buildCommand": "next build"
+  "buildCommand": "npm run build && mkdir -p .next/server/app/\\(dashboard\\) && echo 'module.exports = {};' > .next/server/app/\\(dashboard\\)/page_client-reference-manifest.js"
 }
