@@ -1,7 +1,8 @@
 {
   "name": "project-ahorrito",
   "version": "0.1.0",
-  "private": true,  "scripts": {
+  "private": true,
+  "scripts": {
     "dev": "concurrently \"next dev --turbopack\" \"node scripts/categorize-worker.js\" \"dotenv -e .env.local -- drizzle-kit studio\"",
     "build": "next build",
     "vercel-build": "next build && node scripts/post-build.js",

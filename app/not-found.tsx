@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import Link from "next/link";
 
 export default function NotFound() {
   return (
@@ -10,8 +10,8 @@ export default function NotFound() {
         <p className="text-gray-600 mb-8">
           Lo sentimos, no pudimos encontrar la página que buscas.
         </p>
-        <Link 
-          href="/" 
+        <Link
+          href="/"
           className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
         >
           Volver al inicio

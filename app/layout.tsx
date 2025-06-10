@@ -21,18 +21,18 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // Debug Clerk configuration
-  const clerkConfig = getClerkConfig();
-  const publishableKey = clerkConfig.publishableKey;
-  
-  if (typeof window !== 'undefined') {
-    console.log('Clerk Publishable Key:', publishableKey ? `${publishableKey.substring(0, 20)}...` : 'MISSING');
-    console.log('Environment:', process.env.NODE_ENV);
-    console.log('Allowed Origins:', clerkConfig.allowedOrigins);
+  const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+
+  if (typeof window !== "undefined") {
+    console.log(
+      "Clerk Publishable Key:",
+      publishableKey ? `${publishableKey.substring(0, 20)}...` : "MISSING"
+    );
+    console.log("Environment:", process.env.NODE_ENV);
   }
 
   return (
-    <ClerkProvider 
+    <ClerkProvider
       publishableKey={publishableKey!}
       signInUrl="/sign-in"
       signUpUrl="/sign-up"
@@ -41,10 +41,12 @@ export default function RootLayout({
       appearance={{
         baseTheme: undefined,
         variables: {
-          colorPrimary: "#0EA5E9"
-        }
+          colorPrimary: "#0EA5E9",
+        },
       }}
-    >      <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`}>
+    >
+      {" "}
+      <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`}>
         <body className="antialiased font-sans">
           <ClerkDebugger />
           <QueryProvider>
