@@ -1,4 +1,13 @@
 {
   "version": 2,
-  "framework": "nextjs"
+  "framework": "nextjs",
+  "buildCommand": "next build",
+  "functions": {
+    "app/**/*.ts": {
+      "runtime": "nodejs20.x"
+    },
+    "app/**/*.tsx": {
+      "runtime": "nodejs20.x"
+    }
+  }
 }

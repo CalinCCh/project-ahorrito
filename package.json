@@ -1,10 +1,10 @@
 {
   "name": "project-ahorrito",
   "version": "0.1.0",
-  "private": true,
-  "scripts": {
+  "private": true,  "scripts": {
     "dev": "concurrently \"next dev --turbopack\" \"node scripts/categorize-worker.js\" \"dotenv -e .env.local -- drizzle-kit studio\"",
     "build": "next build",
+    "vercel-build": "next build && node scripts/post-build.js",
     "start": "next start",
     "lint": "next lint",
     "db-generate": "drizzle-kit generate",
@@ -14,8 +14,7 @@
     "categorize:loop": "node scripts/categorize-worker.js",
     "worker:build": "node scripts/build-cloudflare-worker.js",
     "worker:deploy": "npm run worker:build && npx wrangler deploy",
-    "worker:dev": "npx wrangler dev",
-    "vercel-build": "npm run build"
+    "worker:dev": "npx wrangler dev"
   },
   "overrides": {
     "@clerk/elements": {

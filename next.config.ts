@@ -11,9 +11,7 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  experimental: {
-    esmExternals: "loose"
-  }
+  outputFileTracing: false
 };
 
 export default nextConfig;
